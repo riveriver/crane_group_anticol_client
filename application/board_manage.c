@@ -5,6 +5,10 @@
 #include "task.h"
 #include "uart_manage_port.h"
 #include "eth_manage_task.h"
+#include "modbus_register_interface.h"
+#include "modbus_register_database.h"
+#include "read_swing_encoder_task.h"
+#include "read_luffing_encoder_task.h"
 
 #define LOG_D(fmt, ...) printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_I(fmt, ...) printf("[I][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
@@ -24,12 +28,38 @@ static const osThreadAttr_t eth_manage_attr = {
     .stack_size = 4096 * 4,
     .priority = (osPriority_t) osPriorityNormal,
 };
+
+static const osThreadAttr_t read_swing_encoder_attr = {
+    .name = "ReadSwingEncoderTask",
+    .stack_size = 4096 * 4,
+    .priority = (osPriority_t) osPriorityNormal,
+};
+
+static const osThreadAttr_t read_luffing_encoder_attr = {
+    .name = "ReadLuffingEncoderTask",
+    .stack_size = 4096 * 4,
+    .priority = (osPriority_t) osPriorityNormal,
+};
+
 void board_create_user_tasks(void) {
     osThreadId_t tid = osThreadNew(eth_manage_task, NULL, &eth_manage_attr);
     if (tid == NULL) {
         LOG_E("Failed to create EthManageTask\n");
     } else {
         LOG_I("EthManageTask created successfully\n");
+    }
+
+    tid = osThreadNew(read_swing_encoder_thread, NULL, &read_swing_encoder_attr);
+    if (tid == NULL) {
+        LOG_E("Failed to create ReadSwingEncoderTask\n");
+    } else {
+        LOG_I("ReadSwingEncoderTask created successfully\n");
+    }
+    tid = osThreadNew(read_luffing_encoder_thread, NULL, &read_luffing_encoder_attr);
+    if (tid == NULL) {
+        LOG_E("Failed to create ReadLuffingEncoderTask\n");
+    } else {
+        LOG_I("ReadLuffingEncoderTask created successfully\n"); 
     }
 }
 

@@ -136,9 +136,9 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 
 	    		if(mHandlers[i]->xTypeHW == USART_HW_DMA)
 	    		{
-	    			if(Size) //check if we have received any byte
+	    			if(size) //check if we have received any byte
 	    			{
-		    				mHandlers[i]->xBufferRX.u8available = Size;
+		    				mHandlers[i]->xBufferRX.u8available = size;
 		    				mHandlers[i]->xBufferRX.overflow = false;
 
 		    				while(HAL_UARTEx_ReceiveToIdle_DMA(mHandlers[i]->port, mHandlers[i]->xBufferRX.uxBuffer, MAX_BUFFER) != HAL_OK)
