@@ -12,7 +12,7 @@
 typedef void (*tcpip_callback_fn)(void *ctx);
 extern err_t tcpip_callback(tcpip_callback_fn function, void *ctx);
 
-#define // LOG_D(fmt, ...) printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
+#define LOG_D(fmt, ...) // printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_I(fmt, ...) printf("[I][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_E(fmt, ...) printf("[E][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 
