@@ -1,6 +1,7 @@
 #include "uart_manage.h"
 #include <string.h>
 #include "am_modbus.h"
+#include "uart_4g_app.h"
 
 /* DMA buffer placement */
 #if defined(__GNUC__)
@@ -16,10 +17,42 @@ static uint8_t uart1_send_buff[256U] DMA_BUFFER;
 static uint8_t uart1_send_fifo_buff[256U] DMA_BUFFER;
 static uint8_t uart1_process_buff[256U * 4U] DMA_BUFFER;
 
-static uint32_t shell_recv_callback(uint8_t *buf, uint16_t len)
+extern UART_HandleTypeDef huart8;
+extern DMA_HandleTypeDef hdma_uart8_rx;
+static uint8_t uart8_recv_buff[256U] DMA_BUFFER;
+static uint8_t uart8_send_buff[256U] DMA_BUFFER;
+static uint8_t uart8_send_fifo_buff[256U] DMA_BUFFER;
+static uint8_t uart8_process_buff[256U * 4U] DMA_BUFFER;
+
+static uint32_t uart_shell_recv_callback(uint8_t *buf, uint16_t len)
+{
+	static const uint8_t prefix[] = "unkown:";
+	static const uint8_t crlf[] = "\r\n";
+	const uint16_t prefix_len = (uint16_t)(sizeof(prefix) - 1U);
+	const uint16_t crlf_len = (uint16_t)(sizeof(crlf) - 1U);
+
+	if (is_usr_4g_at_command(buf, len) != 0U)
+	{
+		(void)uart_manage_dma_send_by_name("4g", buf, len);
+
+		if ((len > 0U) && (buf[len - 1U] != '\r') && (buf[len - 1U] != '\n'))
+		{
+			(void)uart_manage_dma_send_by_name("4g", (uint8_t *)crlf, crlf_len);
+		}
+	}
+	else
+	{
+		(void)uart_manage_dma_send_by_name("shell", (uint8_t *)prefix, prefix_len);
+		(void)uart_manage_dma_send_by_name("shell", buf, len);
+	}
+
+  return 0U;
+}
+
+static uint32_t uart_4g_recv_callback(uint8_t *buf, uint16_t len)
 {
 	(void)uart_manage_dma_send_by_name("shell", buf, len);
-    return 0U;
+	return 0U;
 }
 
 const uart_inferface_t uart_manage_table[] = {
@@ -31,11 +64,26 @@ const uart_inferface_t uart_manage_table[] = {
     .recv_buffer_size = sizeof(uart1_recv_buff),
     .process_buffer = uart1_process_buff,
     .process_buffer_size = sizeof(uart1_process_buff),
-    .recv_callback = shell_recv_callback,
+    .recv_callback = uart_shell_recv_callback,
     .send_buffer = uart1_send_buff,
     .send_buffer_size = sizeof(uart1_send_buff),
     .send_fifo_buffer = uart1_send_fifo_buff,
     .send_fifo_size = sizeof(uart1_send_fifo_buff),
+    .send_callback = NULL,
+  },
+  {
+    .name = "4g",
+    .uart_h = &huart8,
+    .dma_h = &hdma_uart8_rx,
+    .recv_buffer = uart8_recv_buff,
+    .recv_buffer_size = sizeof(uart8_recv_buff),
+    .process_buffer = uart8_process_buff,
+    .process_buffer_size = sizeof(uart8_process_buff),
+	.recv_callback = uart_4g_recv_callback,
+    .send_buffer = uart8_send_buff,
+    .send_buffer_size = sizeof(uart8_send_buff),
+    .send_fifo_buffer = uart8_send_fifo_buff,
+    .send_fifo_size = sizeof(uart8_send_fifo_buff),
     .send_callback = NULL,
   },
 };
@@ -47,6 +95,7 @@ void setup_uart_service(void)
 {
   (void)uart_manage_init_table(uart_manage_table, uart_manage_table_size);
   uart_manage_enable_dma_recv_by_name("shell");
+  uart_manage_enable_dma_recv_by_name("4g");
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
