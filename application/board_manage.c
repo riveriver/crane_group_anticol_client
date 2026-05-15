@@ -3,7 +3,7 @@
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "eth_master_task.h"
+#include "eth_manage_task.h"
 
 #define LOG_D(fmt, ...) printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_I(fmt, ...) printf("[I][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
@@ -23,7 +23,7 @@ static const osThreadAttr_t eth_manage_attr = {
     .priority = (osPriority_t) osPriorityNormal,
 };
 void board_create_user_tasks(void) {
-    osThreadId_t tid = osThreadNew(eth_master_task, NULL, &eth_manage_attr);
+    osThreadId_t tid = osThreadNew(eth_manage_task, NULL, &eth_manage_attr);
     if (tid == NULL) {
         LOG_E("Failed to create EthManageTask\n");
     } else {

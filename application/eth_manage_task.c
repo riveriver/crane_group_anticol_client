@@ -1,4 +1,4 @@
-#include "eth_master_task.h"
+#include "eth_manage_task.h"
 #include "main.h"
 #include "lwip/ip4_addr.h"
 #include <stdbool.h>
@@ -146,19 +146,19 @@ static void eth_udp_listener_init(void *ctx)
 
   s_udp_pcb = udp_new();
   if (s_udp_pcb == NULL) {
-    LOG_E("Failed to create UDP pcb in eth_master_task\n");
+    LOG_E("Failed to create UDP pcb in eth_manage_task\n");
     return;
   }
 
   if (udp_bind(s_udp_pcb, IP_ADDR_ANY, READ_LOAD_TASK_UDP_PORT) != ERR_OK) {
-    LOG_E("Failed to bind UDP port %u in eth_master_task\n", READ_LOAD_TASK_UDP_PORT);
+    LOG_E("Failed to bind UDP port %u in eth_manage_task\n", READ_LOAD_TASK_UDP_PORT);
     udp_remove(s_udp_pcb);
     s_udp_pcb = NULL;
     return;
   }
 
   udp_recv(s_udp_pcb, eth_udp_recv, NULL);
-  LOG_I("eth_master_task listening UDP port %u for load frames\n", READ_LOAD_TASK_UDP_PORT);
+  LOG_I("eth_manage_task listening UDP port %u for load frames\n", READ_LOAD_TASK_UDP_PORT);
 }
 
 
@@ -169,7 +169,7 @@ static void eth_udp_listener_init(void *ctx)
 int eth_link_up_timeout_ms = 60 * 1000;
 
 
-void eth_master_task(void *argument) {
+void eth_manage_task(void *argument) {
 
     HAL_GPIO_WritePin(ETH_RESET_GPIO_Port, ETH_RESET_Pin, GPIO_PIN_RESET);
     osDelay(100);
