@@ -3,8 +3,6 @@
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "eth_master_task.h"
-#include "read_load_task.h"
 
 #define LOG_D(fmt, ...) printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_I(fmt, ...) printf("[I][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
