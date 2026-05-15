@@ -25,8 +25,7 @@ void setup_encoder_forward_server(void){
 
     memset(holding_reg_data, 0, REG_HOLDING_SIZE * sizeof(uint16_t));
     mb_reg_write_u16(REG_SYSTEM_VERSION, 0x0100); 
-    mb_reg_write_u16(REG_TOTAL_SENSORS, 2);
-    mb_reg_write_u16(REG_ERROR_CODE, 0);
+    mb_reg_write_u16(REG_DATA_VAILD, 0);
 
     encoder_forward_server.uModbusType = MB_SLAVE;
     encoder_forward_server.u8id = MB_RTU_UID;

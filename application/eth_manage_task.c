@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "board_manage.h"
+#include "modbus_register_interface.h"
+#include "modbus_register_database.h"
 
 typedef void (*tcpip_callback_fn)(void *ctx);
 extern err_t tcpip_callback(tcpip_callback_fn function, void *ctx);
@@ -127,6 +129,24 @@ static void eth_udp_recv(void *arg,
       s_latest_load_weight_t = load_weight;
       s_latest_load_weight_pct = load_weight_pct;
       s_load_weight_valid = true;
+      
+      /* Write load metrics to Modbus registers */
+      if (mb_reg_write_float(REG_LIFTING_MOMENT, lifting_moment) == ERR_OK) {
+        LOG_E("Wrote lifting moment to Modbus register\n");
+      }
+      if (mb_reg_write_float(REG_LIFTING_MOMENT_PCT, lifting_moment_pct) == ERR_OK) {
+        LOG_E("Wrote lifting moment percentage to Modbus register\n");
+      }
+      if (mb_reg_write_float(REG_LOAD_WEIGHT, load_weight) == ERR_OK) {
+        LOG_E("Wrote load weight to Modbus register\n");
+      }
+      if (mb_reg_write_float(REG_LOAD_WEIGHT_PCT, load_weight_pct) == ERR_OK) {
+        LOG_E("Wrote load weight percentage to Modbus register\n");
+      }
+      
+      /* Set data valid bit for load weight (bit 4) */
+      mb_reg_write_bit(REG_DATA_VAILD, 4, 1);
+      
       LOG_D("Moment:%.3f t*m, MomentPct:%.3f%%, Weight:%.3f t, WeightPct:%.3f%%\n",
             lifting_moment, lifting_moment_pct, load_weight, load_weight_pct);
     }

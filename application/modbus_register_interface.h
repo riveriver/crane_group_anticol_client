@@ -63,6 +63,15 @@ uint32_t mb_reg_read_u32(uint16_t addr_hi, uint16_t *value_hi, uint16_t *value_l
 uint32_t mb_reg_write_u32(uint16_t addr_hi, uint16_t value_hi, uint16_t value_lo);
 
 /**
+ * Write float value to two consecutive registers (HI/LO pair)
+ * IEEE754 bits are stored as high 16 bits at addr_hi and low 16 bits at addr_hi+1.
+ * @param addr_hi Address of high 16-bit register
+ * @param value Float value to write
+ * @return ERR_OK on success, error code on failure
+ */
+uint32_t mb_reg_write_float(uint16_t addr_hi, float value);
+
+/**
  * Read multiple consecutive registers
  * @param addr Starting register address
  * @param count Number of registers to read
@@ -79,6 +88,15 @@ uint32_t mb_reg_read_n(uint16_t addr, uint16_t count, uint16_t *buffer);
  * @return ERR_OK on success, error code on failure
  */
 uint32_t mb_reg_write_n(uint16_t addr, uint16_t count, const uint16_t *buffer);
+
+/**
+ * Write a single bit in a register
+ * @param addr Register address
+ * @param bit_pos Bit position (0-15)
+ * @param bit_value Bit value (0 or non-zero for 1)
+ * @return ERR_OK on success, error code on failure
+ */
+uint32_t mb_reg_write_bit(uint16_t addr, uint8_t bit_pos, uint8_t bit_value);
 
 /**
  * Get pointer to holding register buffer (for Modbus stack direct access)
