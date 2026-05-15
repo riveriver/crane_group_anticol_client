@@ -4,6 +4,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "uart_manage_port.h"
+#include "offline_manage_task.h"
 #include "eth_manage_task.h"
 #include "modbus_register_interface.h"
 #include "modbus_register_database.h"
@@ -21,7 +22,14 @@ void board_get_mac_address(uint8_t *mac);
 void board_setup_components(void) {
     specify_redirect_uart(&huart1);
     setup_uart_service();
+    setup_encoder_forward_server();
 }
+
+static const osThreadAttr_t offline_manage_attr = {
+    .name = "OfflineManageTask",
+    .stack_size = 4096 * 4,
+    .priority = (osPriority_t) osPriorityNormal,
+};
 
 static const osThreadAttr_t eth_manage_attr = {
     .name = "EthManageTask",
@@ -42,7 +50,17 @@ static const osThreadAttr_t read_luffing_encoder_attr = {
 };
 
 void board_create_user_tasks(void) {
-    osThreadId_t tid = osThreadNew(eth_manage_task, NULL, &eth_manage_attr);
+    
+    osThreadId_t tid;
+    
+    tid = osThreadNew(offline_manage_task, NULL, &offline_manage_attr);
+    if (tid == NULL) {
+        LOG_E("Failed to create OfflineManageTask\n");
+    } else {
+        LOG_I("OfflineManageTask created successfully\n");
+    }
+
+    tid = osThreadNew(eth_manage_task, NULL, &eth_manage_attr);
     if (tid == NULL) {
         LOG_E("Failed to create EthManageTask\n");
     } else {

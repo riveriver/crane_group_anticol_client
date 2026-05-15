@@ -8,6 +8,7 @@
 #include "lwip/udp.h"
 #include <stdint.h>
 #include <string.h>
+#include "board_manage.h"
 
 typedef void (*tcpip_callback_fn)(void *ctx);
 extern err_t tcpip_callback(tcpip_callback_fn function, void *ctx);
@@ -168,7 +169,6 @@ static void eth_udp_listener_init(void *ctx)
 
 int eth_link_up_timeout_ms = 60 * 1000;
 
-
 void eth_manage_task(void *argument) {
 
     HAL_GPIO_WritePin(ETH_RESET_GPIO_Port, ETH_RESET_Pin, GPIO_PIN_RESET);
@@ -187,13 +187,14 @@ void eth_manage_task(void *argument) {
     {
       uint32_t start_tick = osKernelGetTickCount();
       while (!netif_is_link_up(&gnetif) || !netif_is_up(&gnetif))
-        {
+{
         if ((osKernelGetTickCount() - start_tick) > eth_link_up_timeout_ms)
         {
             LOG_E("Network interface is not up after %d ms\n", eth_link_up_timeout_ms);
             break;
         }
         osDelay(100);
+        offline_manage_update_event(OFFLINE_ETH_MANAGE_TASK);
       }
     }
 
@@ -205,5 +206,6 @@ void eth_manage_task(void *argument) {
     while (1) 
     {
       osDelay(10);
+      offline_manage_update_event(OFFLINE_ETH_MANAGE_TASK);
     }
 }

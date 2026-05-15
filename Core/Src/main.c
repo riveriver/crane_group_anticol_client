@@ -32,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define LOG_D(fmt, ...) printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
+#define LOG_D(fmt, ...) // printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_I(fmt, ...) printf("[I][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_E(fmt, ...) printf("[E][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)    
 /* USER CODE END PD */
@@ -745,8 +745,6 @@ void StartDefaultTask(void *argument)
           device_mac[0], device_mac[1], device_mac[2], 
           device_mac[3], device_mac[4], device_mac[5],
           osKernelGetTickCount() / 1000);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-    HAL_IWDG_Refresh(&hiwdg1);
     osDelay(1000);
   }
   /* USER CODE END 5 */
