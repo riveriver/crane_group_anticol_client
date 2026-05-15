@@ -46,6 +46,7 @@ const uint16_t uart_manage_table_size =
 void setup_uart_service(void)
 {
   (void)uart_manage_init_table(uart_manage_table, uart_manage_table_size);
+  uart_manage_enable_dma_recv_by_name("shell");
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
