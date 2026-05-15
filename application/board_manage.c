@@ -3,6 +3,7 @@
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "uart_manage_port.h"
 #include "eth_manage_task.h"
 
 #define LOG_D(fmt, ...) printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
@@ -15,6 +16,7 @@ void board_get_mac_address(uint8_t *mac);
 
 void board_setup_components(void) {
     specify_redirect_uart(&huart1);
+    setup_uart_service();
 }
 
 static const osThreadAttr_t eth_manage_attr = {
