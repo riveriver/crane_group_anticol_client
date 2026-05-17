@@ -43,7 +43,17 @@ _Min_Stack_Size = 0x4000; /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-  FLASH (rx)     : ORIGIN = 0x08000000, LENGTH = 2048K
+  /*
+   * OTA staging/application layout (internal 2MB Flash):
+   *
+   *  Bootloader    : 0x08000000 - 0x0801FFFF (128KB)
+   *  Temp Firmware : 0x08020000 - 0x080FFFFF (896KB, Bank1)
+   *  Application   : 0x08100000 - 0x081DFFFF (896KB, Bank2)
+   *  Metadata      : 0x081E0000 - 0x081FFFFF (128KB, Bank2 tail)
+   *
+   * This linker script builds the Application image.
+   */
+  FLASH (rx)     : ORIGIN = 0x08100000, LENGTH = 2048K
   DTCMRAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 128K
   RAM_D1 (xrw)   : ORIGIN = 0x24000000, LENGTH = 512K
   RAM_D2 (xrw)   : ORIGIN = 0x30000000, LENGTH = 288K

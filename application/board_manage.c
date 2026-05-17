@@ -10,6 +10,7 @@
 #include "modbus_register_database.h"
 #include "read_swing_encoder_task.h"
 #include "read_luffing_encoder_task.h"
+#include "ota_service_task.h"
 
 #define LOG_D(fmt, ...) printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_I(fmt, ...) printf("[I][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
@@ -23,6 +24,7 @@ void board_setup_components(void) {
     specify_redirect_uart(&huart1);
     setup_uart_service();
     setup_encoder_forward_server();
+    (void)ota_init_service(0x08020000U, 896U * 1024U);
 }
 
 static const osThreadAttr_t offline_manage_attr = {
@@ -73,12 +75,16 @@ void board_create_user_tasks(void) {
     } else {
         LOG_I("ReadSwingEncoderTask created successfully\n");
     }
+
     tid = osThreadNew(read_luffing_encoder_thread, NULL, &read_luffing_encoder_attr);
     if (tid == NULL) {
         LOG_E("Failed to create ReadLuffingEncoderTask\n");
     } else {
         LOG_I("ReadLuffingEncoderTask created successfully\n"); 
     }
+
+    ota_create_consumer_task();
+    
 }
 
 void board_get_mac_address(uint8_t *mac)

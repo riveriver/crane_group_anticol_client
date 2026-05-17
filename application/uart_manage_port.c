@@ -1,7 +1,12 @@
 #include "uart_manage.h"
 #include <string.h>
 #include "am_modbus.h"
-#include "uart_4g_app.h"
+#include "at_protocol_handler.h"
+#include "ota_service_task.h"
+
+#define LOG_D(...) // printf(__VA_ARGS__)
+#define LOG_I(...) printf(__VA_ARGS__)
+#define LOG_E(...) printf(__VA_ARGS__)
 
 /* DMA buffer placement */
 #if defined(__GNUC__)
@@ -12,47 +17,90 @@
 
 extern UART_HandleTypeDef huart1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
-static uint8_t uart1_recv_buff[256U] DMA_BUFFER;
 static uint8_t uart1_send_buff[256U] DMA_BUFFER;
 static uint8_t uart1_send_fifo_buff[256U] DMA_BUFFER;
-static uint8_t uart1_process_buff[256U * 4U] DMA_BUFFER;
+static uint8_t uart1_recv_buff[512U] DMA_BUFFER;
+static uint8_t uart1_process_buff[1024U] DMA_BUFFER;
 
 extern UART_HandleTypeDef huart8;
 extern DMA_HandleTypeDef hdma_uart8_rx;
-static uint8_t uart8_recv_buff[256U] DMA_BUFFER;
 static uint8_t uart8_send_buff[256U] DMA_BUFFER;
 static uint8_t uart8_send_fifo_buff[256U] DMA_BUFFER;
-static uint8_t uart8_process_buff[256U * 4U] DMA_BUFFER;
+static uint8_t uart8_recv_buff[2048U] DMA_BUFFER;
+static uint8_t uart8_process_buff[2048U] DMA_BUFFER;
 
 static uint32_t uart_shell_recv_callback(uint8_t *buf, uint16_t len)
 {
-	static const uint8_t prefix[] = "unkown:";
-	static const uint8_t crlf[] = "\r\n";
-	const uint16_t prefix_len = (uint16_t)(sizeof(prefix) - 1U);
-	const uint16_t crlf_len = (uint16_t)(sizeof(crlf) - 1U);
-
-	if (is_usr_4g_at_command(buf, len) != 0U)
+	/* Check and handle craner AT commands */
+	if (craner_at_handler(buf, len) != 0U)
 	{
-		(void)uart_manage_dma_send_by_name("4g", buf, len);
-
-		if ((len > 0U) && (buf[len - 1U] != '\r') && (buf[len - 1U] != '\n'))
-		{
-			(void)uart_manage_dma_send_by_name("4g", (uint8_t *)crlf, crlf_len);
-		}
+		return 0U;
 	}
-	else
+
+	if (usr_at_handler(buf, len) != 0U)
 	{
+		return 0U;
+	}
+
+	{
+		static const uint8_t prefix[] = "[SHELL] ";
+		const uint16_t prefix_len = (uint16_t)(sizeof(prefix) - 1U);
 		(void)uart_manage_dma_send_by_name("shell", (uint8_t *)prefix, prefix_len);
 		(void)uart_manage_dma_send_by_name("shell", buf, len);
+		return 0U;
 	}
-
-  return 0U;
 }
 
 static uint32_t uart_4g_recv_callback(uint8_t *buf, uint16_t len)
 {
-	(void)uart_manage_dma_send_by_name("shell", buf, len);
-	return 0U;
+	if ((buf == NULL) || (len == 0U))
+	{
+		return 0U;
+	}
+
+    LOG_I("Received %u bytes from 4G\r\n", len);
+
+	if ((len >= 2U) && (buf[0] == '1') && (buf[1] == ','))
+	{
+		if (craner_at_handler(buf[2], len-2) != 0U)
+		{
+			return 0U;
+		}
+	}
+	else if ((len >= 2U) && (buf[0] == '2') && (buf[1] == ','))
+	{
+		// 以"2,"开头的消息，将后面的内容入队
+		if (g_ota.rx_queue == NULL)
+		{
+			return 0U;
+		}
+
+		// 跳过"2,"前缀，处理剩余数据
+		uint16_t data_len = len - 2U;
+		if (data_len == 0U)
+		{
+			return 0U;
+		}
+
+		ota_rx_chunk_t msg;
+		if (data_len > sizeof(msg.data))
+		{
+			data_len = sizeof(msg.data);
+		}
+
+		msg.len = data_len;
+		memcpy(msg.data, &buf[2], data_len);
+		(void)osMessageQueuePut(g_ota.rx_queue, &msg, 0U, 0U);
+		return 0U;
+	}
+
+	{
+		static const uint8_t prefix[] = "[4G] ";
+		const uint16_t prefix_len = (uint16_t)(sizeof(prefix) - 1U);
+		(void)uart_manage_dma_send_by_name("shell", (uint8_t *)prefix, prefix_len);
+		(void)uart_manage_dma_send_by_name("shell", buf, len);
+		return 0U;
+	}
 }
 
 const uart_inferface_t uart_manage_table[] = {
