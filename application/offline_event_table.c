@@ -25,24 +25,11 @@ void system_protect_offline(void)
     LOG_E("system protect caused by offline event: %d\r\n", offline_reset_event);
 }
 
-/* BMS event handlers */
-void bms_offline_first(void)
+void read_load_weight_offline_first(void)
 {
-    LOG_E("BMS offline detected\r\n");
+    LOG_E("Load weight data offline\r\n");
+    mb_reg_write_bit(REG_DATA_VAILD, REG_DATA_VAILD_BIT_LOAD_WEIGHT, false);
 }
-
-/* GPS event handlers */
-void gps_offline_first(void)
-{
-    LOG_E("GPS offline detected\r\n");
-}
-
-/* Heartbeat event handlers */
-void heartbeat_offline_first(void)
-{
-    LOG_E("Heartbeat offline detected\r\n");
-}
-
 /* ============================================================================
  * PROJECT-SPECIFIC OFFLINE EVENT TABLE
  * ============================================================================ */
@@ -62,7 +49,7 @@ struct offline_manage_obj offline_event_table[] =
         .online_func = NULL
     },
     {
-        .event = OFFLINE_ETH_MANAGE_TASK,
+        .event = OFFLINE_ETH_MANAGE,
         .enable = ENABLE,
         .error_level = OFFLINE_ERROR_LEVEL,
         .group_id = 3,
@@ -73,7 +60,7 @@ struct offline_manage_obj offline_event_table[] =
         .online_func = NULL
     },
     {
-        .event = OFFLINE_READ_SWING_TASK,
+        .event = OFFLINE_READ_SWING_ENCODER,
         .enable = ENABLE,
         .error_level = OFFLINE_ERROR_LEVEL,
         .group_id = 2,
@@ -84,12 +71,23 @@ struct offline_manage_obj offline_event_table[] =
         .online_func = NULL
     },
     {
-        .event = OFFLINE_READ_LUFFING_TASK,
+        .event = OFFLINE_READ_LUFFING_ENCODER,
+        .enable = ENABLE,
+        .error_level = OFFLINE_ERROR_LEVEL,
+        .group_id = 2,
+        .offline_time = 1000,
+        .offline_first_func = NULL,
+        .offline_func = NULL,
+        .online_first_func = NULL,
+        .online_func = NULL
+    },
+    {
+        .event = OFFLINE_READ_LOAD_WEIGHT,
         .enable = ENABLE,
         .error_level = OFFLINE_WARNING_LEVEL,
         .group_id = 2,
         .offline_time = 1000,
-        .offline_first_func = NULL,
+        .offline_first_func = read_load_weight_offline_first,
         .offline_func = NULL,
         .online_first_func = NULL,
         .online_func = NULL

@@ -58,6 +58,7 @@ void read_luffing_encoder_thread(void *argument){
         int err = ModbusQueryV2(&client, telegram);
         if (err != OP_OK_QUERY){
             LOG_E("E(%s,%d)\r\n", ENCODER_NAME,err);
+            mb_reg_write_bit(REG_DATA_VAILD, REG_DATA_VAILD_BIT_LUFFING_ENCODER, false);
         }else{
             LOG_D("%s:", ENCODER_NAME);
             for (int i = 0; i < telegram.u16CoilsNo; i++) {
