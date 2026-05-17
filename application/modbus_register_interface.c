@@ -238,9 +238,3 @@ uint32_t mb_reg_write_bit(uint16_t addr, uint8_t bit_pos, bool bit_value)
   osMutexRelease(g_reg_mutex);
   return ERR_OK;
 }
-
-/* Get pointer to all holding registers (for Modbus stack use) */
-uint16_t* mb_reg_get_buffer(void)
-{
-  return g_holding_registers;
-}

@@ -1,5 +1,7 @@
 #include "offline_event_table.h"
 #include "offline_manage_task.h"
+#include "modbus_register_database.h"
+#include "modbus_register_interface.h"
 
 #define LOG_D(...) // printf(__VA_ARGS__)
 #define LOG_I(...) printf(__VA_ARGS__)
@@ -50,7 +52,7 @@ struct offline_manage_obj offline_event_table[] =
     },
     {
         .event = OFFLINE_ETH_MANAGE,
-        .enable = ENABLE,
+        .enable = DISABLE,
         .error_level = OFFLINE_ERROR_LEVEL,
         .group_id = 3,
         .offline_time = 1000,
@@ -61,7 +63,7 @@ struct offline_manage_obj offline_event_table[] =
     },
     {
         .event = OFFLINE_READ_SWING_ENCODER,
-        .enable = ENABLE,
+        .enable = DISABLE,
         .error_level = OFFLINE_ERROR_LEVEL,
         .group_id = 2,
         .offline_time = 1000,
@@ -72,7 +74,7 @@ struct offline_manage_obj offline_event_table[] =
     },
     {
         .event = OFFLINE_READ_LUFFING_ENCODER,
-        .enable = ENABLE,
+        .enable = DISABLE,
         .error_level = OFFLINE_ERROR_LEVEL,
         .group_id = 2,
         .offline_time = 1000,
@@ -83,7 +85,7 @@ struct offline_manage_obj offline_event_table[] =
     },
     {
         .event = OFFLINE_READ_LOAD_WEIGHT,
-        .enable = ENABLE,
+        .enable = DISABLE,
         .error_level = OFFLINE_WARNING_LEVEL,
         .group_id = 1,
         .offline_time = 1000,

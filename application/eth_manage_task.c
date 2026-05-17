@@ -214,7 +214,7 @@ void eth_manage_task(void *argument) {
             break;
         }
         osDelay(100);
-        offline_manage_update_event(OFFLINE_ETH_MANAGE_TASK);
+        offline_manage_update_event(OFFLINE_ETH_MANAGE);
       }
     }
 
@@ -226,6 +226,6 @@ void eth_manage_task(void *argument) {
     while (1) 
     {
       osDelay(10);
-      offline_manage_update_event(OFFLINE_ETH_MANAGE_TASK);
+      offline_manage_update_event(OFFLINE_ETH_MANAGE);
     }
 }

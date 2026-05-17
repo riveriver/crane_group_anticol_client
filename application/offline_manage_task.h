@@ -11,9 +11,10 @@ typedef void (*offline_t)(void);
 typedef enum
 {
     NO_OFFLINE = 0, /*!< system is normal */
-	OFFLINE_ETH_MANAGE_TASK,
-    OFFLINE_READ_SWING_TASK,
-    OFFLINE_READ_LUFFING_TASK,
+	OFFLINE_ETH_MANAGE,
+    OFFLINE_READ_SWING_ENCODER,
+    OFFLINE_READ_LUFFING_ENCODER,
+    OFFLINE_READ_LOAD_WEIGHT,
     OFFLINE_EVENT_MAX_NUM,
 } offline_event;
 

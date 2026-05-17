@@ -53,7 +53,7 @@ void read_luffing_encoder_thread(void *argument){
     for(;;)
     {
         vTaskDelay(xFrequency);
-        offline_manage_update_event(OFFLINE_READ_LUFFING_TASK);
+        offline_manage_update_event(OFFLINE_READ_LUFFING_ENCODER);
 
         int err = ModbusQueryV2(&client, telegram);
         if (err != OP_OK_QUERY){
