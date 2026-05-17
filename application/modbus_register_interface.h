@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* Error codes */
 #define ERR_OK               0x0000
@@ -93,10 +94,10 @@ uint32_t mb_reg_write_n(uint16_t addr, uint16_t count, const uint16_t *buffer);
  * Write a single bit in a register
  * @param addr Register address
  * @param bit_pos Bit position (0-15)
- * @param bit_value Bit value (0 or non-zero for 1)
+ * @param bit_value Boolean bit value
  * @return ERR_OK on success, error code on failure
  */
-uint32_t mb_reg_write_bit(uint16_t addr, uint8_t bit_pos, uint8_t bit_value);
+uint32_t mb_reg_write_bit(uint16_t addr, uint8_t bit_pos, bool bit_value);
 
 /**
  * Get pointer to holding register buffer (for Modbus stack direct access)

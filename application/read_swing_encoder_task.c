@@ -67,7 +67,7 @@ void read_swing_encoder_thread(void *argument){
             mb_reg_write_u32(ENCODER_REG_ADDR, telegram.u16reg[0], telegram.u16reg[1]);
             
             /* Set data valid bit for swing encoder */
-            mb_reg_write_bit(REG_DATA_VAILD, REG_DATA_VAILD_BIT_SWING_ENCODER, 1);
+            mb_reg_write_bit(REG_DATA_VAILD, REG_DATA_VAILD_BIT_SWING_ENCODER, true);
         }
         
     }

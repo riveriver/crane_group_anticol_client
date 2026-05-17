@@ -145,7 +145,7 @@ static void eth_udp_recv(void *arg,
       }
       
       /* Set data valid bit for load weight */
-      mb_reg_write_bit(REG_DATA_VAILD, REG_DATA_VAILD_BIT_LOAD_WEIGHT, 1);
+      mb_reg_write_bit(REG_DATA_VAILD, REG_DATA_VAILD_BIT_LOAD_WEIGHT, true);
       
       LOG_D("Moment:%.3f t*m, MomentPct:%.3f%%, Weight:%.3f t, WeightPct:%.3f%%\n",
             lifting_moment, lifting_moment_pct, load_weight, load_weight_pct);

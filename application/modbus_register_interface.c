@@ -211,7 +211,7 @@ uint16_t* mb_reg_get_buffer(void)
 }
 
 /* Write a single bit in a register (thread-safe) */
-uint32_t mb_reg_write_bit(uint16_t addr, uint8_t bit_pos, uint8_t bit_value)
+uint32_t mb_reg_write_bit(uint16_t addr, uint8_t bit_pos, bool bit_value)
 {
   if (bit_pos > 15) {
     return ERR_INVALID_PARAM;
