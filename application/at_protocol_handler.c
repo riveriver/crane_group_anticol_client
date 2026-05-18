@@ -45,13 +45,6 @@ uint8_t craner_at_handler(const uint8_t *buf, uint16_t len)
 		// 	                                   (uint16_t)strlen(ver_buf));
 		// 	return 1U;
 		// }
-		
-		if (strstr(tmp, "craner#AT") != NULL)
-		{
-			const char ok[] = "craner#OK\r\n";
-			(void)uart_manage_dma_send_by_name("shell", (uint8_t *)ok, (uint16_t)(sizeof(ok) - 1U));
-			return 1U;
-		}
 
 		/* Handle OTA START command */
 		if (strstr(tmp, "craner#AT+OTASTART") != NULL)
@@ -67,6 +60,14 @@ uint8_t craner_at_handler(const uint8_t *buf, uint16_t len)
 				const char err[] = "craner#ERROR\r\n";
 				(void)uart_manage_dma_send_by_name("shell", (uint8_t *)err, (uint16_t)(sizeof(err) - 1U));
 			}
+			return 1U;
+		}
+
+        /* Must place general command handler at the end, otherwise it may preempt specific command handling */
+		if (strstr(tmp, "craner#AT") != NULL)
+		{
+			const char ok[] = "craner#OK\r\n";
+			(void)uart_manage_dma_send_by_name("shell", (uint8_t *)ok, (uint16_t)(sizeof(ok) - 1U));
 			return 1U;
 		}
 
