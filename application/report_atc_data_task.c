@@ -155,6 +155,8 @@ static void pack_neighbor_data(uint8_t *out)
 
 }
 
+#include "ota_service_task.h"
+extern ota_service_t g_ota;
 void report_atc_data_task(void *argument)
 {
     (void)argument;
@@ -167,7 +169,8 @@ void report_atc_data_task(void *argument)
 
     for (;;) {
         
-        if (ota_lock_interface(osWaitForever) != 0) {
+        if (g_ota.state != OTA_SVC_IDLE)
+        {
             vTaskDelay(pdMS_TO_TICKS(10));
             continue;
         }
@@ -184,8 +187,6 @@ void report_atc_data_task(void *argument)
 
         // transmit via UART8 (blocking)
         neighbor_report_interface_send(frame, sizeof(frame));
-
-        ota_unlock_interface();
 
         packet_seq++;
 

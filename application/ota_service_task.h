@@ -70,10 +70,6 @@ typedef struct
 
 extern ota_service_t g_ota;
 
-void ota_init_interface_lock(void);
-int ota_lock_interface(uint32_t timeout_ms);
-void ota_unlock_interface(void);
-
 /**
  * Initialize OTA service on UART8
  * Must be called once during system setup, before task creation
