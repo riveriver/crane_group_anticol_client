@@ -7,7 +7,6 @@
 #define LOG_I(...) printf(__VA_ARGS__)
 #define LOG_E(...) printf(__VA_ARGS__)
 
-
 extern UART_HandleTypeDef huart2; 
 
 #define MB_RTU_INTERFACE huart2
@@ -54,6 +53,18 @@ void read_luffing_encoder_thread(void *argument){
     {
         vTaskDelay(xFrequency);
         offline_manage_update_event(OFFLINE_READ_LUFFING_ENCODER);
+
+    #if (ENCODER_FAKE_DATA_MODE == 1)
+        static uint32_t fake_encoder = 0U;
+        fake_encoder += 5U;
+        if(mb_reg_write_u32(ENCODER_REG_ADDR, (uint16_t)((fake_encoder >> 16) & 0xFFFFU), (uint16_t)(fake_encoder & 0xFFFFU)) != ERR_OK) {
+            LOG_E("E(%s, write fake data failed)\r\n", ENCODER_NAME);
+        }
+        if(mb_reg_write_bit(REG_DATA_VAILD, REG_DATA_VAILD_BIT_LUFFING_ENCODER, true) != ERR_OK) {  
+            LOG_E("E(%s, set data valid bit failed)\r\n", ENCODER_NAME);
+        }
+        continue;
+    #endif
 
         int err = ModbusQueryV2(&client, telegram);
         if (err != OP_OK_QUERY){

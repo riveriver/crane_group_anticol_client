@@ -55,6 +55,14 @@ void read_swing_encoder_thread(void *argument){
         vTaskDelay(xFrequency);
         offline_manage_update_event(OFFLINE_READ_SWING_ENCODER);
 
+        #if (ENCODER_FAKE_DATA_MODE == 1)
+        static uint32_t fake_encoder = 0U;
+        fake_encoder += 37U;
+        mb_reg_write_u32(ENCODER_REG_ADDR, (uint16_t)((fake_encoder >> 16) & 0xFFFFU), (uint16_t)(fake_encoder & 0xFFFFU));
+        mb_reg_write_bit(REG_DATA_VAILD, REG_DATA_VAILD_BIT_SWING_ENCODER, true);
+        continue;
+        #endif
+
         int err = ModbusQueryV2(&client, telegram);
         if (err != OP_OK_QUERY){
             LOG_E("E(%s,%d)\r\n", ENCODER_NAME,err);
