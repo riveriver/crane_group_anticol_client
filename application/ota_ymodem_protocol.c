@@ -296,23 +296,28 @@ int ota_ymodem_feed(ota_ymodem_ctx_t *ctx, const uint8_t *buf, uint16_t len)
 	{
 		if (ctx->frame_expected == 0U)
 		{
-			uint8_t head = buf[idx];
-			if ((head == YMODEM_SOH) || (head == YMODEM_STX))
+			uint16_t search = idx;
+			while (search < len)
 			{
-				uint16_t data_len = (head == YMODEM_SOH) ? YMODEM_SOH_DATA_LEN : YMODEM_STX_DATA_LEN;
-				ctx->frame_expected = (uint16_t)(data_len + YMODEM_FRAME_OVERHEAD);
-				ctx->frame_len = 0U;
+				uint8_t head = buf[search];
+				if ((head == YMODEM_SOH) || (head == YMODEM_STX))
+				{
+					uint16_t data_len = (head == YMODEM_SOH) ? YMODEM_SOH_DATA_LEN : YMODEM_STX_DATA_LEN;
+					ctx->frame_expected = (uint16_t)(data_len + YMODEM_FRAME_OVERHEAD);
+					ctx->frame_len = 0U;
+					idx = search;
+					break;
+				}
+				if ((head == YMODEM_EOT) || (head == YMODEM_CAN))
+				{
+					(void)ymodem_handle_control(ctx, head);
+				}
+				search++;
 			}
-			else if ((head == YMODEM_EOT) || (head == YMODEM_CAN))
+
+			if (ctx->frame_expected == 0U)
 			{
-				(void)ymodem_handle_control(ctx, head);
-				idx++;
-				continue;
-			}
-			else
-			{
-				idx++;
-				continue;
+				break;
 			}
 		}
 
@@ -330,9 +335,36 @@ int ota_ymodem_feed(ota_ymodem_ctx_t *ctx, const uint8_t *buf, uint16_t len)
 
 		if (ctx->frame_len >= ctx->frame_expected)
 		{
-			(void)ymodem_process_frame(ctx);
-			ctx->frame_expected = 0U;
-			ctx->frame_len = 0U;
+			int ret = ymodem_process_frame(ctx);
+			if (ret == OTA_YMODEM_OK)
+			{
+				ctx->frame_expected = 0U;
+				ctx->frame_len = 0U;
+			}
+			else
+			{
+				uint16_t resync = 1U;
+				while (resync < ctx->frame_len)
+				{
+					uint8_t head = ctx->frame_buf[resync];
+					if ((head == YMODEM_SOH) || (head == YMODEM_STX))
+					{
+						uint16_t data_len = (head == YMODEM_SOH) ? YMODEM_SOH_DATA_LEN : YMODEM_STX_DATA_LEN;
+						uint16_t remaining = (uint16_t)(ctx->frame_len - resync);
+						memmove(ctx->frame_buf, &ctx->frame_buf[resync], remaining);
+						ctx->frame_len = remaining;
+						ctx->frame_expected = (uint16_t)(data_len + YMODEM_FRAME_OVERHEAD);
+						break;
+					}
+					resync++;
+				}
+
+				if (resync >= ctx->frame_len)
+				{
+					ctx->frame_expected = 0U;
+					ctx->frame_len = 0U;
+				}
+			}
 		}
 	}
 
