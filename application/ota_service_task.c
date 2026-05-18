@@ -13,6 +13,34 @@
 
 ota_service_t g_ota;
 
+static osSemaphoreId_t ota_intereface_lock = NULL;
+
+void ota_init_interface_lock(void)
+{
+	if (ota_intereface_lock == NULL)
+	{
+		ota_intereface_lock = osSemaphoreNew(1U, 1U, NULL);
+	}
+}
+
+int ota_lock_interface(uint32_t timeout_ms)
+{
+	
+	if (ota_intereface_lock == NULL)
+	{
+		ota_init_interface_lock();
+	}
+	return (osSemaphoreAcquire(ota_intereface_lock, timeout_ms) == osOK) ? 0 : -1;
+}
+
+void ota_unlock_interface(void)
+{
+	if (ota_intereface_lock != NULL)
+	{
+		(void)osSemaphoreRelease(ota_intereface_lock);
+	}
+}
+
 static uint32_t ota_crc32_init(void)
 {
 	return 0xFFFFFFFFU;
@@ -284,6 +312,9 @@ static int ota_on_finish(uint32_t size, void *user)
 		svc->state = OTA_SVC_COMPLETED;
 		svc->reboot_pending = 1U;
 		/* stop sending 'C' handled by consumer loop */
+
+	// release the shared UART so report task can resume
+	ota_unlock_interface();
 	return 0;
 }
 
@@ -301,6 +332,9 @@ static void ota_on_error(int err, void *user)
 		/* stop sending 'C' handled by consumer loop */
 	ota_send_can_abort();
 	(void)ota_flash_erase_range(svc->temp_base, svc->temp_limit - svc->temp_base);
+
+	// release the shared UART so report task can resume
+	ota_unlock_interface();
 }
 
 static void ota_consumer_task(void *argument)
@@ -374,6 +408,9 @@ int ota_init_service(uint32_t temp_fw_addr, uint32_t fw_max_size)
 	ota_setup_ymodem_procotol(&g_ota);
 //	(void)uart_manage_set_recv_callback_by_name("4g", ota_interface_recv_callback);
 
+	// initialize the UART gate so report can run while OTA is idle
+	ota_init_interface_lock();
+
 	return 0;
 }
 
@@ -420,6 +457,12 @@ int ota_start_transfer(void)
 	g_ota.crc32 = ota_crc32_init();
 	g_ota.state = OTA_SVC_WAIT_START;
 
+	// lock the shared UART so report task cannot send while OTA is active
+	if (ota_lock_interface(osWaitForever) != 0)
+	{
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -428,6 +471,9 @@ void ota_stop_transfer(void)
 	ota_send_can_abort();
 	g_ota.state = OTA_SVC_FAILED;
 	(void)ota_flash_erase_range(g_ota.temp_base, g_ota.temp_limit - g_ota.temp_base);
+
+	// release the shared UART so report task can resume
+	ota_unlock_interface();
 }
 
 ota_ymodem_state_e ota_get_transfer_status(void)
