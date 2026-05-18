@@ -82,6 +82,15 @@ uint32_t mb_reg_write_float(uint16_t addr_hi, float value);
 uint32_t mb_reg_read_n(uint16_t addr, uint16_t count, uint16_t *buffer);
 
 /**
+ * Read multiple non-consecutive registers in one lock operation
+ * @param addr_list Array of register addresses to read
+ * @param count Number of addresses to read
+ * @param values Output array for register values (same order as addr_list)
+ * @return ERR_OK on success, error code on failure
+ */
+uint32_t mb_reg_read_multi_u16(const uint16_t *addr_list, uint16_t count, uint16_t *values);
+
+/**
  * Write multiple consecutive registers
  * @param addr Starting register address
  * @param count Number of registers to write

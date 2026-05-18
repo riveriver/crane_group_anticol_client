@@ -179,6 +179,37 @@ uint32_t mb_reg_read_n(uint16_t addr, uint16_t count, uint16_t *buffer)
   return ERR_OK;
 }
 
+/* Read multiple non-consecutive registers in one lock operation */
+uint32_t mb_reg_read_multi_u16(const uint16_t *addr_list, uint16_t count, uint16_t *values)
+{
+  uint16_t i;
+
+  if ((addr_list == NULL) || (values == NULL) || (count == 0)) {
+    return ERR_INVALID_PARAM;
+  }
+
+  if (g_holding_registers == NULL) {
+    return ERR_INIT_FAILED;
+  }
+
+  for (i = 0; i < count; ++i) {
+    if (addr_list[i] >= g_register_count) {
+      return ERR_INVALID_ADDR;
+    }
+  }
+
+  if (osMutexAcquire(g_reg_mutex, osWaitForever) != osOK) {
+    return ERR_LOCK_FAILED;
+  }
+
+  for (i = 0; i < count; ++i) {
+    values[i] = g_holding_registers[addr_list[i]];
+  }
+
+  osMutexRelease(g_reg_mutex);
+  return ERR_OK;
+}
+
 /* Write multiple consecutive registers */
 uint32_t mb_reg_write_n(uint16_t addr, uint16_t count, const uint16_t *buffer)
 {

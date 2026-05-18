@@ -11,6 +11,7 @@
 #include "read_swing_encoder_task.h"
 #include "read_luffing_encoder_task.h"
 #include "ota_service_task.h"
+#include "report_atc_data_task.h"
 
 #define LOG_D(fmt, ...) printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_I(fmt, ...) printf("[I][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
@@ -84,6 +85,13 @@ void board_create_user_tasks(void) {
     }
 
     ota_create_consumer_task();
+
+    const osThreadAttr_t attr = {
+        .name = "neighbor_report",
+        .stack_size = 1024 * 4,
+        .priority = (osPriority_t)osPriorityNormal,
+    };
+    osThreadNew(report_atc_data_task, NULL, &attr);
     
 }
 
