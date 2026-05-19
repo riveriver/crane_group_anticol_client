@@ -12,8 +12,8 @@ extern "C" {
 #include "stm32h7xx_hal.h"
 #include "fifo.h"
 
-typedef uint32_t (*interface_send_fn_t)(uint8_t *buf, uint16_t len);
-typedef uint32_t (*interface_recv_fn_t)(uint8_t *buf, uint16_t len);
+typedef int32_t (*interface_send_fn_t)(uint8_t *buf, uint16_t len);
+typedef int32_t (*interface_recv_fn_t)(uint8_t *buf, uint16_t len);
 
 #define UART_MANAGE_MAX_OBJECTS 8U
 typedef struct uart_interface
