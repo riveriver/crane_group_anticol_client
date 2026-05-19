@@ -16,7 +16,7 @@ extern "C" {
 #define OTA_QUEUE_DEPTH                  8U
 #define OTA_FLASHWORD_SIZE               32U
 
-#define OTA_CHUNK_MAX_SIZE 256U
+#define OTA_CHUNK_MAX_SIZE 1030U
 
 typedef struct
 {
@@ -40,7 +40,7 @@ typedef enum
 typedef struct
 {
 	uint16_t len;
-	uint8_t data[1030U];
+	uint8_t data[OTA_CHUNK_MAX_SIZE];
 } ota_rx_chunk_t;
 
 typedef struct

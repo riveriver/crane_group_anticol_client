@@ -170,7 +170,7 @@ static int ota_interface_send(const uint8_t *buf, uint16_t len, void *user)
 	(void)user;
 	
 	// 创建临时缓冲区，添加"2,"前缀
-	uint8_t temp_buf[OTA_CHUNK_MAX_SIZE + 2U];
+	uint8_t temp_buf[128U];
 	temp_buf[0] = '2';
 	temp_buf[1] = ',';
 	
