@@ -131,17 +131,17 @@ static void eth_udp_recv(void *arg,
       s_load_weight_valid = true;
       
       /* Write load metrics to Modbus registers */
-      if (mb_reg_write_float(REG_LIFTING_MOMENT, lifting_moment) == ERR_OK) {
-        LOG_E("Wrote lifting moment to Modbus register\n");
+      if (mb_reg_write_float(REG_LIFTING_MOMENT, lifting_moment) != ERR_OK) {
+        LOG_E("Failed to write lifting moment to Modbus register\n");
       }
-      if (mb_reg_write_float(REG_LIFTING_MOMENT_PCT, lifting_moment_pct) == ERR_OK) {
-        LOG_E("Wrote lifting moment percentage to Modbus register\n");
+      if (mb_reg_write_float(REG_LIFTING_MOMENT_PCT, lifting_moment_pct) != ERR_OK) {
+        LOG_E("Failed to write lifting moment percentage to Modbus register\n");
       }
-      if (mb_reg_write_float(REG_LOAD_WEIGHT, load_weight) == ERR_OK) {
-        LOG_E("Wrote load weight to Modbus register\n");
+      if (mb_reg_write_float(REG_LOAD_WEIGHT, load_weight) != ERR_OK) {
+        LOG_E("Failed to write load weight to Modbus register\n");
       }
-      if (mb_reg_write_float(REG_LOAD_WEIGHT_PCT, load_weight_pct) == ERR_OK) {
-        LOG_E("Wrote load weight percentage to Modbus register\n");
+      if (mb_reg_write_float(REG_LOAD_WEIGHT_PCT, load_weight_pct) != ERR_OK) {
+        LOG_E("Failed to write load weight percentage to Modbus register\n");
       }
       
       /* Set data valid bit for load weight */
