@@ -94,19 +94,7 @@ osThreadId_t ota_create_consumer_task(void);
  * Sends initial 'C' to request Ymodem transmission from host
  * @return 0 on success, negative on error
  */
-int ota_start_transfer(void);
-
-/**
- * Stop OTA firmware transfer on UART8
- * Sends CAN signal to abort transmission
- */
-void ota_stop_transfer(void);
-
-/**
- * Get current OTA transfer status
- * @return Current OTA state (see ota_ymodem_state_e)
- */
-ota_ymodem_state_e ota_get_transfer_status(void);
+int ota_start_transfer_callback(void);
 
 #ifdef __cplusplus
 }

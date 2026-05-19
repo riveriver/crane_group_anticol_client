@@ -25,8 +25,7 @@ typedef enum
 	OTA_YMODEM_ERR_CRC = -2,
 	OTA_YMODEM_ERR_SEQ = -3,
 	OTA_YMODEM_ERR_OVERFLOW = -4,
-	OTA_YMODEM_ERR_IO = -5,
-	OTA_YMODEM_ERR_ABORTED = -6
+	OTA_YMODEM_ERR_ABORTED = -5
 } ota_ymodem_err_e;
 
 typedef struct
@@ -42,7 +41,7 @@ typedef struct
 typedef struct
 {
 	ota_ymodem_state_e state;
-	uint8_t frame_buf[2060U];
+	uint8_t frame_buf[1030U];
 	uint16_t frame_len;
 	uint16_t frame_expected;
 	uint8_t block_num;
@@ -51,15 +50,23 @@ typedef struct
 	ota_ymodem_callbacks_t cb;
 } ota_ymodem_ctx_t;
 
-void ota_ymodem_init(ota_ymodem_ctx_t *ctx, const ota_ymodem_callbacks_t *cb);
-void ota_ymodem_reset(ota_ymodem_ctx_t *ctx);
-ota_ymodem_state_e ota_ymodem_get_state(ota_ymodem_ctx_t *ctx);
-int ota_ymodem_feed(ota_ymodem_ctx_t *ctx, const uint8_t *buf, uint16_t len);
+void ymodem_init_procotol(ota_ymodem_ctx_t *ctx, const ota_ymodem_callbacks_t *cb);
+
+/**
+ * Feed a complete Ymodem frame (no streaming/incremental parsing).
+ * The frame should include header, sequence, data, and CRC bytes.
+ */
+int ymodem_feed_frame(ota_ymodem_ctx_t *ctx, const uint8_t *frame, uint16_t len);
 /**
  * Request sender to start Ymodem transfer (send initial 'C').
  * Protocol layer performs the handshake send via provided send callback.
  */
-int ota_ymodem_request_start(ota_ymodem_ctx_t *ctx);
+int ymodem_request_start(ota_ymodem_ctx_t *ctx);
+/**
+ * Request sender to abort Ymodem transfer (send CAN CAN).
+ * Protocol layer performs the abort send via provided send callback.
+ */
+int ymodem_request_abort(ota_ymodem_ctx_t *ctx);
 
 #ifdef __cplusplus
 }

@@ -37,7 +37,7 @@ int32_t craner_at_handler(const uint8_t *buf, uint16_t len)
 		/* Handle OTA START command */
 		if (strstr(tmp, "craner#AT+OTASTART") != NULL)
 		{
-			int ret = ota_start_transfer();
+			int ret = ota_start_transfer_callback();
 			if (ret == 0)
 			{
 				const char ack[] = "craner#OK\r\n";

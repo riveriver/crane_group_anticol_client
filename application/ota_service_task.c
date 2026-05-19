@@ -13,12 +13,61 @@
 
 ota_service_t g_ota;
 
-static uint32_t ota_crc32_init(void)
+static uint32_t ota_init_crc32(void);
+
+static int ota_interface_send(const uint8_t *buf, uint16_t len, void *user)
+{
+	(void)user;
+	
+	// 创建临时缓冲区，添加"2,"前缀
+	uint8_t temp_buf[128U];
+	temp_buf[0] = '2';
+	temp_buf[1] = ',';
+	
+	// 复制原始数据到前缀后面
+	if ((buf != NULL) && (len > 0U))
+	{
+		memcpy(&temp_buf[2], buf, len);
+	}
+	
+	// 发送带前缀的数据
+	return uart_manage_dma_send_by_name("4g", temp_buf, len + 2U);
+}
+
+int ota_start_transfer_callback(void)
+{
+	if (g_ota.state != OTA_SVC_IDLE)
+	{
+		return -1;
+	}
+
+	if (g_ota.rx_queue != NULL)
+	{
+		(void)osMessageQueueReset(g_ota.rx_queue);
+	}
+
+	g_ota.ymodem.state = OTA_YMODEM_STATE_WAIT_HEADER;
+	g_ota.ymodem.frame_len = 0U;
+	g_ota.ymodem.frame_expected = 0U;
+	g_ota.ymodem.block_num = 1U;
+	g_ota.ymodem.eot_count = 0U;
+	g_ota.ymodem.file_size = 0U;
+	g_ota.received_size = 0U;
+	g_ota.image_size = 0U;
+	g_ota.write_addr = g_ota.temp_base;
+	g_ota.cache_len = 0U;
+	g_ota.crc32 = ota_init_crc32();
+	g_ota.state = OTA_SVC_WAIT_START;
+
+	return 0;
+}
+
+static uint32_t ota_init_crc32(void)
 {
 	return 0xFFFFFFFFU;
 }
 
-static uint32_t ota_crc32_update(uint32_t crc, const uint8_t *data, uint32_t len)
+static uint32_t ota_update_crc32(uint32_t crc, const uint8_t *data, uint32_t len)
 {
 	uint32_t c = crc;
 	for (uint32_t i = 0U; i < len; ++i)
@@ -39,7 +88,7 @@ static uint32_t ota_crc32_update(uint32_t crc, const uint8_t *data, uint32_t len
 	return c;
 }
 
-static uint32_t ota_crc32_finalize(uint32_t crc)
+static uint32_t ota_finalize_crc32(uint32_t crc)
 {
 	return crc ^ 0xFFFFFFFFU;
 }
@@ -165,32 +214,7 @@ static int ota_flash_flush_cache(ota_service_t *svc)
 	return 0;
 }
 
-static int ota_interface_send(const uint8_t *buf, uint16_t len, void *user)
-{
-	(void)user;
-	
-	// 创建临时缓冲区，添加"2,"前缀
-	uint8_t temp_buf[128U];
-	temp_buf[0] = '2';
-	temp_buf[1] = ',';
-	
-	// 复制原始数据到前缀后面
-	if ((buf != NULL) && (len > 0U))
-	{
-		memcpy(&temp_buf[2], buf, len);
-	}
-	
-	// 发送带前缀的数据
-	return uart_manage_dma_send_by_name("4g", temp_buf, len + 2U);
-}
-
-static void ota_send_can_abort(void)
-{
-	static const uint8_t can_buf[2] = {0x18U, 0x18U};
-	ota_interface_send((uint8_t *)can_buf, sizeof(can_buf),NULL);
-}
-
-static int ota_on_begin(const char *filename, uint32_t size, void *user)
+static int ota_protocol_on_begin(const char *filename, uint32_t size, void *user)
 {
 	ota_service_t *svc = (ota_service_t *)user;
 	(void)filename;
@@ -204,7 +228,7 @@ static int ota_on_begin(const char *filename, uint32_t size, void *user)
 	svc->received_size = 0U;
 	svc->write_addr = svc->temp_base;
 	svc->cache_len = 0U;
-	svc->crc32 = ota_crc32_init();
+	svc->crc32 = ota_init_crc32();
 
 	if (ota_flash_erase_range(svc->temp_base, svc->temp_limit - svc->temp_base) != 0)
 	{
@@ -217,7 +241,7 @@ static int ota_on_begin(const char *filename, uint32_t size, void *user)
 	return 0;
 }
 
-static int ota_on_data(const uint8_t *data, uint32_t len, void *user)
+static int ota_protocol_on_data(const uint8_t *data, uint32_t len, void *user)
 {
 	ota_service_t *svc = (ota_service_t *)user;
 	if ((svc == NULL) || (data == NULL) || (len == 0U))
@@ -237,12 +261,12 @@ static int ota_on_data(const uint8_t *data, uint32_t len, void *user)
 		return -1;
 	}
 
-	svc->crc32 = ota_crc32_update(svc->crc32, data, write_len);
+	svc->crc32 = ota_update_crc32(svc->crc32, data, write_len);
 	svc->received_size += write_len;
 	return 0;
 }
 
-static int ota_on_finish(uint32_t size, void *user)
+static int ota_protocol_on_finish(uint32_t size, void *user)
 {
 	ota_service_t *svc = (ota_service_t *)user;
 	if (svc == NULL)
@@ -264,7 +288,7 @@ static int ota_on_finish(uint32_t size, void *user)
 	boot_metadata_t meta = {0};
 	meta.magic = OTA_META_MAGIC;
 	meta.image_size = svc->image_size;
-	meta.image_crc32 = ota_crc32_finalize(svc->crc32);
+	meta.image_crc32 = ota_finalize_crc32(svc->crc32);
 
 	svc->state = OTA_SVC_WRITING_META;
 	if (ota_flash_erase_range(svc->meta_base, OTA_METADATA_SIZE) != 0)
@@ -288,7 +312,7 @@ static int ota_on_finish(uint32_t size, void *user)
 	return 0;
 }
 
-static void ota_on_error(int err, void *user)
+static void ota_protocol_on_error(int err, void *user)
 {
 	ota_service_t *svc = (ota_service_t *)user;
 	if (svc == NULL)
@@ -300,9 +324,22 @@ static void ota_on_error(int err, void *user)
 	svc->state = OTA_SVC_FAILED;
 	svc->reboot_pending = 0U;
 		/* stop sending 'C' handled by consumer loop */
-	ota_send_can_abort();
 	(void)ota_flash_erase_range(svc->temp_base, svc->temp_limit - svc->temp_base);
 
+}
+
+static void ota_init_ymodem_procotol(ota_service_t *svc)
+{
+	ota_ymodem_callbacks_t cb;
+	memset(&cb, 0, sizeof(cb));
+	cb.send = ota_interface_send;
+	cb.on_begin = ota_protocol_on_begin;
+	cb.on_data = ota_protocol_on_data;
+	cb.on_finish = ota_protocol_on_finish;
+	cb.on_error = ota_protocol_on_error;
+	cb.user = svc;
+
+	ymodem_init_procotol(&svc->ymodem, &cb);
 }
 
 static void ota_consumer_task(void *argument)
@@ -316,7 +353,11 @@ static void ota_consumer_task(void *argument)
 		osStatus_t st = osMessageQueueGet(svc->rx_queue, &msg, NULL, poll_ms);
 		if (st == osOK)
 		{
-			(void)ota_ymodem_feed(&svc->ymodem, msg.data, msg.len);
+			int err = ymodem_feed_frame(&svc->ymodem, msg.data, msg.len);
+			if (err != 0)
+			{
+				LOG_E("OTA Ymodem feed error: %d\r\n", err);
+			}
 			/* reset accumulator when data arrives */
 			sendc_acc = 0U;
 
@@ -336,7 +377,7 @@ static void ota_consumer_task(void *argument)
 				if (sendc_acc >= 5000U)
 				{
 					/* protocol layer handles handshake send */
-					(void)ota_ymodem_request_start(&svc->ymodem);
+					(void)ymodem_request_start(&svc->ymodem);
 					sendc_acc = 0U;
 				}
 			}
@@ -346,20 +387,6 @@ static void ota_consumer_task(void *argument)
 			}
 		}
 	}
-}
-
-static void ota_setup_ymodem_procotol(ota_service_t *svc)
-{
-	ota_ymodem_callbacks_t cb;
-	memset(&cb, 0, sizeof(cb));
-	cb.send = ota_interface_send;
-	cb.on_begin = ota_on_begin;
-	cb.on_data = ota_on_data;
-	cb.on_finish = ota_on_finish;
-	cb.on_error = ota_on_error;
-	cb.user = svc;
-
-	ota_ymodem_init(&svc->ymodem, &cb);
 }
 
 int ota_init_service(uint32_t temp_fw_addr, uint32_t fw_max_size)
@@ -373,8 +400,7 @@ int ota_init_service(uint32_t temp_fw_addr, uint32_t fw_max_size)
 	g_ota.last_error = 0;
 	g_ota.reboot_pending = 0U;
 
-	ota_setup_ymodem_procotol(&g_ota);
-//	(void)uart_manage_set_recv_callback_by_name("4g", ota_interface_recv_callback);
+	ota_init_ymodem_procotol(&g_ota);
 
 	return 0;
 }
@@ -402,37 +428,3 @@ osThreadId_t ota_create_consumer_task(void)
 	return g_ota.consumer_task;
 }
 
-int ota_start_transfer(void)
-{
-	if (g_ota.state != OTA_SVC_IDLE)
-	{
-		return -1;
-	}
-
-	if (g_ota.rx_queue != NULL)
-	{
-		(void)osMessageQueueReset(g_ota.rx_queue);
-	}
-
-	ota_ymodem_reset(&g_ota.ymodem);
-	g_ota.received_size = 0U;
-	g_ota.image_size = 0U;
-	g_ota.write_addr = g_ota.temp_base;
-	g_ota.cache_len = 0U;
-	g_ota.crc32 = ota_crc32_init();
-	g_ota.state = OTA_SVC_WAIT_START;
-
-	return 0;
-}
-
-void ota_stop_transfer(void)
-{
-	ota_send_can_abort();
-	g_ota.state = OTA_SVC_FAILED;
-	(void)ota_flash_erase_range(g_ota.temp_base, g_ota.temp_limit - g_ota.temp_base);
-}
-
-ota_ymodem_state_e ota_get_transfer_status(void)
-{
-	return ota_ymodem_get_state(&g_ota.ymodem);
-}
