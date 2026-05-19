@@ -42,7 +42,7 @@ typedef struct
 typedef struct
 {
 	ota_ymodem_state_e state;
-	uint8_t frame_buf[1030U];
+	uint8_t frame_buf[2060U];
 	uint16_t frame_len;
 	uint16_t frame_expected;
 	uint8_t block_num;
