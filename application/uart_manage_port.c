@@ -29,17 +29,17 @@ static uint8_t uart8_send_fifo_buff[256U] DMA_BUFFER;
 static uint8_t uart8_recv_buff[2048U] DMA_BUFFER;
 static uint8_t uart8_process_buff[2048U] DMA_BUFFER;
 
-static uint32_t uart_shell_recv_callback(uint8_t *buf, uint16_t len)
+static int32_t uart_shell_recv_callback(uint8_t *buf, uint16_t len)
 {
 	/* Check and handle craner AT commands */
-	if (craner_at_handler(buf, len) != 0U)
+	if (craner_at_handler(buf, len) <= 0)
 	{
-		return 0U;
+		return -1;
 	}
 
-	if (usr_at_handler(buf, len) != 0U)
+	if (usr_at_handler(buf, len) <= 0)
 	{
-		return 0U;
+		return -1;
 	}
 
 	{
@@ -51,38 +51,44 @@ static uint32_t uart_shell_recv_callback(uint8_t *buf, uint16_t len)
 	}
 }
 
-static uint32_t uart_4g_recv_callback(uint8_t *buf, uint16_t len)
+static int32_t uart_4g_recv_callback(uint8_t *buf, uint16_t len)
 {
 	if ((buf == NULL) || (len == 0U))
 	{
-		return 0U;
+		return -1;
 	}
 
-    LOG_I("Received %u bytes from 4G\r\n", len);
+	if (len < 64U)
+	{
+		LOG_D("[4G]recv %.*s\r\n", (int)len, (char *)buf);
+	}
+	else
+	{
+		LOG_D("[4G]recv %u bytes\r\n", len);
+	}
 
 	if ((len >= 2U) && (buf[0] == '1') && (buf[1] == ','))
 	{
-		if (craner_at_handler(buf[2], len-2) != 0U)
+		if (craner_at_handler(&buf[2], len - 2U) <= 0)
 		{
-			return 0U;
+			return -1;
 		}
 	}
 	else if ((len >= 2U) && (buf[0] == '2') && (buf[1] == ','))
 	{
-		// 以"2,"开头的消息，将后面的内容入队
-		if (g_ota.rx_queue == NULL)
-		{
-			return 0U;
-		}
 
-		// 跳过"2,"前缀，处理剩余数据
 		uint16_t data_len = len - 2U;
 		if (data_len == 0U)
 		{
-			return 0U;
+			return -1;
 		}
 
-		ota_rx_chunk_t msg;
+		if (g_ota.rx_queue == NULL)
+		{
+			return -1;
+		}
+		
+		static ota_rx_chunk_t msg;
 		if (data_len > sizeof(msg.data))
 		{
 			data_len = sizeof(msg.data);
