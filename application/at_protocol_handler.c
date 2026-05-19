@@ -2,7 +2,7 @@
 #include "ota_service_task.h"
 #include "at_protocol_handler.h"
 
-uint8_t craner_at_handler(const uint8_t *buf, uint16_t len)
+int32_t craner_at_handler(const uint8_t *buf, uint16_t len)
 {
 	static const char at_prefix[] = "craner#AT";
 	const uint16_t at_prefix_len = (uint16_t)(sizeof(at_prefix) - 1U);
@@ -23,7 +23,7 @@ uint8_t craner_at_handler(const uint8_t *buf, uint16_t len)
 	/* Check if remaining length is sufficient */
 	if ((len - index) < at_prefix_len)
 	{
-		return 0U;
+		return AT_PREFIX_NOT_MATCH;
 	}
 
 	/* Compare prefix */
@@ -34,18 +34,6 @@ uint8_t craner_at_handler(const uint8_t *buf, uint16_t len)
 		memcpy(tmp, buf, tlen);
 		tmp[tlen] = '\0';
 
-		/* Handle VERSION query command */
-		// if (strstr(tmp, "craner#AT+SYSVER") != NULL)
-		// {
-		// 	char ver_buf[64];
-		// 	const system_info_t *info = board_get_system_info();
-		// 	snprintf(ver_buf, sizeof(ver_buf), "VERSION=%s;BUILD=%s;\r\n",
-		// 	         info->name, info->build_timestamp);
-		// 	(void)uart_manage_dma_send_by_name("shell", (uint8_t *)ver_buf,
-		// 	                                   (uint16_t)strlen(ver_buf));
-		// 	return 1U;
-		// }
-
 		/* Handle OTA START command */
 		if (strstr(tmp, "craner#AT+OTASTART") != NULL)
 		{
@@ -54,13 +42,13 @@ uint8_t craner_at_handler(const uint8_t *buf, uint16_t len)
 			{
 				const char ack[] = "craner#OK\r\n";
 				(void)uart_manage_dma_send_by_name("shell", (uint8_t *)ack, (uint16_t)(sizeof(ack) - 1U));
+				return AT_OK;
 			}
-			else
 			{
 				const char err[] = "craner#ERROR\r\n";
 				(void)uart_manage_dma_send_by_name("shell", (uint8_t *)err, (uint16_t)(sizeof(err) - 1U));
+				return AT_ACTION_EXECUTION_FAILED;
 			}
-			return 1U;
 		}
 
         /* Must place general command handler at the end, otherwise it may preempt specific command handling */
@@ -68,7 +56,7 @@ uint8_t craner_at_handler(const uint8_t *buf, uint16_t len)
 		{
 			const char ok[] = "craner#OK\r\n";
 			(void)uart_manage_dma_send_by_name("shell", (uint8_t *)ok, (uint16_t)(sizeof(ok) - 1U));
-			return 1U;
+			return AT_OK;
 		}
 
 		/* Unknown command */
@@ -77,13 +65,13 @@ uint8_t craner_at_handler(const uint8_t *buf, uint16_t len)
 			(void)uart_manage_dma_send_by_name("shell", (uint8_t *)err, (uint16_t)(sizeof(err) - 1U));
 		}
 
-		return 1U;
+		return AT_UNKNOWN_CMD;
 	}
 
-	return 0U;
+	return AT_PREFIX_NOT_MATCH;
 }
 
-uint8_t usr_at_handler(const uint8_t *buf, uint16_t len)
+int32_t usr_at_handler(const uint8_t *buf, uint16_t len)
 {
 	static const char at_prefix[] = "usr.cn#AT";
 	const uint16_t at_prefix_len = (uint16_t)(sizeof(at_prefix) - 1U);
@@ -100,7 +88,7 @@ uint8_t usr_at_handler(const uint8_t *buf, uint16_t len)
 
 	if ((len - index) < at_prefix_len)
 	{
-		return 0U;
+		return AT_PREFIX_NOT_MATCH;
 	}
 
 	if (memcmp(&buf[index], at_prefix, at_prefix_len) == 0)
@@ -116,9 +104,9 @@ uint8_t usr_at_handler(const uint8_t *buf, uint16_t len)
 			(void)uart_manage_dma_send_by_name("4g", (uint8_t *)crlf, crlf_len);
 		}
 
-		return 1U;
+		return AT_OK;
 	}
 
-	return 0U;
+	return AT_PREFIX_NOT_MATCH;
 }
 
