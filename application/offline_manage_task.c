@@ -15,12 +15,24 @@
 #define OFFLINE_LED_BLINK_MS     1000U
 #define OFFLINE_TASK_PERIOD_MS    100U
 #define OFFLINE_MANAGE_PERIOD_MS 1000U
+#define OFFLINE_AUTO_REBOOT_MS   (12UL * 60UL * 60UL * 1000UL)
 
 extern struct offline_manage_obj offline_event_table[];
 extern int offline_event_table_size;
 extern offline_event offline_reset_event;
 
 struct offline_manage_obj offline_manage[OFFLINE_EVENT_MAX_NUM];
+
+static void offline_manage_force_reset(void)
+{
+    __disable_irq();
+    __DSB();
+    __ISB();
+    NVIC_SystemReset();
+    while (1)
+    {
+    }
+}
 
 static uint8_t offline_manage_get_led_group_id(void)
 {
@@ -293,9 +305,19 @@ void offline_manage_task(void *argument)
     const TickType_t xManagePeriod = pdMS_TO_TICKS(OFFLINE_MANAGE_PERIOD_MS);
     TickType_t xLastWakeTime = xTaskGetTickCount();
     TickType_t xManageTick = 0;
+    uint32_t boot_tick = GET_TICK_TIME();
     for (;;)
     {   
         vTaskDelayUntil(&xLastWakeTime, xPeriod);
+
+        uint32_t now = GET_TICK_TIME();
+        if ((uint32_t)(now - boot_tick) >= OFFLINE_AUTO_REBOOT_MS)
+        {
+            LOG_I("system uptime reached 12 hours, rebooting MCU\r\n");
+            vTaskDelay(pdMS_TO_TICKS(3000));
+            offline_manage_force_reset();
+        }
+
         update_offline_manage();
     }
 }
