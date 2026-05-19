@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#define LOGD(...) printf(__VA_ARGS__)
+#define LOG_D(...) printf(__VA_ARGS__)
 
 #define YMODEM_SOH                0x01U
 #define YMODEM_STX                0x02U
@@ -46,7 +46,7 @@ static int ymodem_send_byte(const ota_ymodem_callbacks_t *cb, uint8_t val)
 	}
     
 	vTaskDelay(60);
-    LOGD("Ymodem send byte: 0x%02X\r\n", val);
+    LOG_D("Ymodem send byte: 0x%02X\r\n", val);
 	return cb->send(&val, 1U, cb->user);
 }
 
@@ -56,6 +56,16 @@ static void ymodem_notify_error(ota_ymodem_ctx_t *ctx, int err)
 	{
 		ctx->cb.on_error(err, ctx->cb.user);
 	}
+}
+
+static void ymodem_log_block(const ota_ymodem_ctx_t *ctx, uint8_t blk)
+{
+	if (ctx == NULL)
+	{
+		return;
+	}
+
+	LOG_D("Ymodem blk=%u expect=%u\r\n", (unsigned)blk, (unsigned)ctx->block_num);
 }
 
 static int ymodem_handle_header(ota_ymodem_ctx_t *ctx, const uint8_t *data, uint16_t len)
@@ -144,6 +154,7 @@ static int ymodem_process_frame(ota_ymodem_ctx_t *ctx)
 	uint16_t data_len = (head == YMODEM_SOH) ? YMODEM_SOH_DATA_LEN : YMODEM_STX_DATA_LEN;
 	if (ctx->frame_len != (uint16_t)(data_len + YMODEM_FRAME_OVERHEAD))
 	{
+		LOG_D("Ymodem frame length mismatch: expected %u, got %u\r\n", (unsigned)(data_len + YMODEM_FRAME_OVERHEAD), (unsigned)ctx->frame_len);
 		return OTA_YMODEM_ERR_PARAM;
 	}
     
@@ -153,6 +164,7 @@ static int ymodem_process_frame(ota_ymodem_ctx_t *ctx)
 	if ((uint8_t)(blk + blk_inv) != 0xFFU)
 	{
 		(void)ymodem_send_byte(&ctx->cb, YMODEM_NAK);
+		ymodem_log_block(ctx, blk);
 		return OTA_YMODEM_ERR_SEQ;
 	}
     
@@ -163,6 +175,7 @@ static int ymodem_process_frame(ota_ymodem_ctx_t *ctx)
 	if (crc_rx != crc_calc)
 	{
 		(void)ymodem_send_byte(&ctx->cb, YMODEM_NAK);
+		ymodem_log_block(ctx, blk);
 		return OTA_YMODEM_ERR_CRC;
 	}
     
@@ -171,17 +184,25 @@ static int ymodem_process_frame(ota_ymodem_ctx_t *ctx)
 	{
 		if ((ctx->state == OTA_YMODEM_STATE_WAIT_HEADER) || (ctx->state == OTA_YMODEM_STATE_WAIT_LAST_EMPTY))
 		{
-			return ymodem_handle_header(ctx, data, data_len);
+			int ret = ymodem_handle_header(ctx, data, data_len);
+			ymodem_log_block(ctx, blk);
+			return ret;
 		}
 
 		(void)ymodem_send_byte(&ctx->cb, YMODEM_NAK);
+		ymodem_log_block(ctx, blk);
 		return OTA_YMODEM_ERR_SEQ;
 	}
 
 	if (ctx->state != OTA_YMODEM_STATE_RECV_DATA)
 	{
-		(void)ymodem_send_byte(&ctx->cb, YMODEM_NAK);
-		return OTA_YMODEM_ERR_SEQ;
+		/* request sender to abort transfer */
+		(void)ymodem_send_byte(&ctx->cb, YMODEM_CAN);
+		(void)ymodem_send_byte(&ctx->cb, YMODEM_CAN);
+		ctx->state = OTA_YMODEM_STATE_ABORTED;
+		ymodem_notify_error(ctx, OTA_YMODEM_ERR_ABORTED);
+		ymodem_log_block(ctx, blk);
+		return OTA_YMODEM_ERR_ABORTED;
 	}
  
     // 处理数据包
@@ -192,6 +213,7 @@ static int ymodem_process_frame(ota_ymodem_ctx_t *ctx)
 		{
 			ctx->block_num++;
 		}
+		ymodem_log_block(ctx, blk);
 		return ret;
 	}
     
@@ -199,10 +221,12 @@ static int ymodem_process_frame(ota_ymodem_ctx_t *ctx)
 	if (blk == (uint8_t)(ctx->block_num - 1U))
 	{
 		(void)ymodem_send_byte(&ctx->cb, YMODEM_ACK);
+		ymodem_log_block(ctx, blk);
 		return OTA_YMODEM_OK;
 	}
 
 	(void)ymodem_send_byte(&ctx->cb, YMODEM_NAK);
+	ymodem_log_block(ctx, blk);
 	return OTA_YMODEM_ERR_SEQ;
 }
 
