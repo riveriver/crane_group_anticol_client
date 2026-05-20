@@ -736,15 +736,9 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  uint8_t device_mac[6] = {0};
-  board_get_mac_address(device_mac);
   /* Infinite loop */
   for (;;)
   {
-    LOG_D("Hello from mcu(%02X:%02X:%02X:%02X:%02X:%02X)[%lu]\n", 
-          device_mac[0], device_mac[1], device_mac[2], 
-          device_mac[3], device_mac[4], device_mac[5],
-          osKernelGetTickCount() / 1000);
     osDelay(1000);
   }
   /* USER CODE END 5 */
