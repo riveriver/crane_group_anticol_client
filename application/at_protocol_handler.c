@@ -54,6 +54,27 @@ int32_t craner_at_handler(const uint8_t *buf, uint16_t len,at_reply_send_fn_t re
 			}
 		}
 
+		/* Handle OTA RESET command: abort current session and clear OTA state */
+		if (strstr(tmp, "craner#AT+OTARESET") != NULL)
+		{
+			(void)ota_reset_transfer_callback();
+			{
+				const char ok[] = "craner#OK\r\n";
+				(void)send_fn((uint8_t *)ok, (uint16_t)(sizeof(ok) - 1U));
+			}
+			return AT_OK;
+		}
+
+		/* Handle system reset command */
+		if (strstr(tmp, "craner#AT+SYSRESET") != NULL)
+		{
+			const char ok[] = "craner#OK\r\n";
+			(void)send_fn((uint8_t *)ok, (uint16_t)(sizeof(ok) - 1U));
+			osDelay(100U);
+			NVIC_SystemReset();
+			return AT_OK;
+		}
+
         /* Must place general command handler at the end, otherwise it may preempt specific command handling */
 		if (strstr(tmp, "craner#AT") != NULL)
 		{
