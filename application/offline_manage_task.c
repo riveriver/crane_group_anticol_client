@@ -109,6 +109,14 @@ void offline_manage_disable_event(offline_event event)
     }
 }
 
+void offline_manage_disable_all_event(void)
+{
+    for (int i = 0; i < OFFLINE_EVENT_MAX_NUM; i++)
+    {
+         offline_manage[i].enable = 0;
+    }
+}
+
 uint8_t offline_manage_get_system_protect(void)
 {
    return offline_manage[SYSTEM_PROTECT].online_state;
@@ -218,8 +226,6 @@ void setup_offline_manage(){
 
 void update_offline_manage()
 {
-    FEED_SYS_WATCHDOG();
-
     offline_event display_event = NO_OFFLINE;
     uint8_t error_level = 0XFF;
     uint32_t now = GET_TICK_TIME();
