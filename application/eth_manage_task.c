@@ -188,7 +188,8 @@ static void eth_udp_listener_init(void *ctx)
 #define ETH_STATIC_GATEWAY "192.168.1.1"
 
 int eth_link_up_timeout_ms = 60 * 1000;
-
+#include "ota_service_task.h"
+extern ota_service_t g_ota;
 void eth_manage_task(void *argument) {
 
     HAL_GPIO_WritePin(ETH_RESET_GPIO_Port, ETH_RESET_Pin, GPIO_PIN_RESET);
@@ -204,10 +205,10 @@ void eth_manage_task(void *argument) {
     MX_LWIP_Init();
 
     extern struct netif gnetif;
-      while (!netif_is_link_up(&gnetif) || !netif_is_up(&gnetif))
-{
-        osDelay(100);
-        offline_manage_update_event(OFFLINE_ETH_MANAGE);
+    while (!netif_is_link_up(&gnetif) || !netif_is_up(&gnetif))
+    {
+      osDelay(100);
+      offline_manage_update_event(OFFLINE_ETH_MANAGE);
     }
 
     /* Setup UDP listener for load weight frames in tcpip thread context */
@@ -217,7 +218,13 @@ void eth_manage_task(void *argument) {
     
     while (1) 
     {
-      osDelay(10);
+      if (g_ota.state != OTA_SVC_IDLE)
+      {
+          vTaskDelay(pdMS_TO_TICKS(10));
+          continue;
+      }
+
+      osDelay(100);
       offline_manage_update_event(OFFLINE_ETH_MANAGE);
     }
 }

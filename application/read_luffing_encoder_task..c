@@ -24,7 +24,8 @@ static modbusHandler_t client;
 static modbus_t telegram;
 #define RECV_BUFF_SIZE 10
 static uint16_t recv_buff[RECV_BUFF_SIZE] = {0};
-
+#include "ota_service_task.h"
+extern ota_service_t g_ota;
 void read_luffing_encoder_thread(void *argument){
 
     (void)argument;
@@ -51,6 +52,12 @@ void read_luffing_encoder_thread(void *argument){
     const TickType_t xFrequency = pdMS_TO_TICKS(100);
     for(;;)
     {
+        if (g_ota.state != OTA_SVC_IDLE)
+        {
+            vTaskDelay(pdMS_TO_TICKS(10));
+            continue;
+        }
+
         vTaskDelay(xFrequency);
         offline_manage_update_event(OFFLINE_READ_LUFFING_ENCODER);
 
