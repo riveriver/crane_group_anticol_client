@@ -204,18 +204,10 @@ void eth_manage_task(void *argument) {
     MX_LWIP_Init();
 
     extern struct netif gnetif;
-    {
-      uint32_t start_tick = osKernelGetTickCount();
       while (!netif_is_link_up(&gnetif) || !netif_is_up(&gnetif))
 {
-        if ((osKernelGetTickCount() - start_tick) > eth_link_up_timeout_ms)
-        {
-            LOG_E("Network interface is not up after %d ms\n", eth_link_up_timeout_ms);
-            break;
-        }
         osDelay(100);
         offline_manage_update_event(OFFLINE_ETH_MANAGE);
-      }
     }
 
     /* Setup UDP listener for load weight frames in tcpip thread context */
