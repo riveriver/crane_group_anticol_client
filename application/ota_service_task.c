@@ -14,6 +14,7 @@
 ota_service_t g_ota;
 
 static uint32_t ota_init_crc32(void);
+static void ota_reset_runtime_state(ota_service_t *svc);
 
 static int ota_interface_send(const uint8_t *buf, uint16_t len, void *user)
 {
@@ -36,6 +37,16 @@ static int ota_interface_send(const uint8_t *buf, uint16_t len, void *user)
 
 int ota_start_transfer_callback(void)
 {
+	if ((g_ota.state == OTA_SVC_RECEIVING) || (g_ota.state == OTA_SVC_VERIFYING) || (g_ota.state == OTA_SVC_WRITING_META))
+	{
+		return -1;
+	}
+
+	if (g_ota.state != OTA_SVC_IDLE)
+	{
+		ota_reset_runtime_state(&g_ota);
+	}
+
 	if (g_ota.state != OTA_SVC_IDLE)
 	{
 		return -1;
@@ -59,12 +70,52 @@ int ota_start_transfer_callback(void)
 	g_ota.crc32 = ota_init_crc32();
 	g_ota.state = OTA_SVC_WAIT_START;
 
+	
+
+	return 0;
+}
+
+int ota_reset_transfer_callback(void)
+{
+	ota_reset_runtime_state(&g_ota);
 	return 0;
 }
 
 static uint32_t ota_init_crc32(void)
 {
 	return 0xFFFFFFFFU;
+}
+
+static void ota_reset_runtime_state(ota_service_t *svc)
+{
+	if (svc == NULL)
+	{
+		return;
+	}
+
+	if (svc->state != OTA_SVC_IDLE)
+	{
+		(void)ymodem_request_abort(&svc->ymodem);
+	}
+
+	if (svc->rx_queue != NULL)
+	{
+		(void)osMessageQueueReset(svc->rx_queue);
+	}
+
+	{
+		ota_ymodem_callbacks_t cb = svc->ymodem.cb;
+		ymodem_init_procotol(&svc->ymodem, &cb);
+	}
+
+	svc->state = OTA_SVC_IDLE;
+	svc->last_error = 0;
+	svc->reboot_pending = 0U;
+	svc->received_size = 0U;
+	svc->image_size = 0U;
+	svc->write_addr = svc->temp_base;
+	svc->cache_len = 0U;
+	svc->crc32 = ota_init_crc32();
 }
 
 static uint32_t ota_update_crc32(uint32_t crc, const uint8_t *data, uint32_t len)
@@ -350,6 +401,8 @@ static void ota_consumer_task(void *argument)
 	const uint32_t poll_ms = 100U;
 	for (;;)
 	{
+        FEED_SYS_WATCHDOG();
+
 		osStatus_t st = osMessageQueueGet(svc->rx_queue, &msg, NULL, poll_ms);
 		if (st == osOK)
 		{
@@ -364,7 +417,7 @@ static void ota_consumer_task(void *argument)
 			if (svc->reboot_pending != 0U)
 			{
 				LOG_I("OTA complete, rebooting after flush...\r\n");
-				osDelay(200U);
+				osDelay(3000U);
 				NVIC_SystemReset();
 			}
 		}

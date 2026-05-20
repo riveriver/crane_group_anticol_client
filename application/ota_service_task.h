@@ -96,6 +96,12 @@ osThreadId_t ota_create_consumer_task(void);
  */
 int ota_start_transfer_callback(void);
 
+/**
+ * Reset OTA firmware transfer state and abort any active Ymodem session
+ * @return 0 on success, negative on error
+ */
+int ota_reset_transfer_callback(void);
+
 #ifdef __cplusplus
 }
 #endif
