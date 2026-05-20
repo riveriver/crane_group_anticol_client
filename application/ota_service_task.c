@@ -7,6 +7,7 @@
 #include "stm32h7xx_hal_flash.h"
 #include "stm32h7xx_hal_flash_ex.h"
 #include "board_manage.h"
+#include "offline_manage_task.h"
 
 #define LOG_I(...) printf(__VA_ARGS__)
 #define LOG_E(...) printf(__VA_ARGS__)
@@ -71,7 +72,7 @@ int ota_start_transfer_callback(void)
 	g_ota.crc32 = ota_init_crc32();
 	g_ota.state = OTA_SVC_WAIT_START;
 
-	
+	offline_manage_disable_all_event();
 
 	return 0;
 }
@@ -402,7 +403,8 @@ static void ota_consumer_task(void *argument)
 	const uint32_t poll_ms = 100U;
 	for (;;)
 	{
-        FEED_SYS_WATCHDOG();
+        vTaskDelay(pdMS_TO_TICKS(1));
+		FEED_SYS_WATCHDOG();
 
 		osStatus_t st = osMessageQueueGet(svc->rx_queue, &msg, NULL, poll_ms);
 		if (st == osOK)

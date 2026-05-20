@@ -37,5 +37,6 @@ struct offline_manage_obj
 void offline_manage_enable_event(offline_event event);
 void offline_manage_disable_event(offline_event event);
 void offline_manage_task(void *argument);
+void offline_manage_disable_all_event();
 
 #endif
