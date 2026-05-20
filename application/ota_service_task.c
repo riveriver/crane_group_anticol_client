@@ -476,7 +476,7 @@ osThreadId_t ota_create_consumer_task(void)
 	{
 		osThreadAttr_t attr = {0};
 		attr.name = "ota_consumer";
-		attr.stack_size = 2048U;
+		attr.stack_size = 4096 * 4U;
 		attr.priority = osPriorityHigh;
 		g_ota.consumer_task = osThreadNew(ota_consumer_task, &g_ota, &attr);
 	}
