@@ -8,5 +8,7 @@
 #define ENCODER_FAKE_DATA_MODE 0
 
 void board_get_mac_address(uint8_t *mac);
+void board_system_reset_force(void);
+void board_report_system_info(void);
 void board_setup_components(void);
 void board_create_user_tasks(void);

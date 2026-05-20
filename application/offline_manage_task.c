@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "main.h"
+#include "board_manage.h"
 
 #define LOG_D(...) // printf(__VA_ARGS__)
 #define LOG_I(...) printf(__VA_ARGS__)
@@ -315,7 +316,7 @@ void offline_manage_task(void *argument)
         {
             LOG_I("system uptime reached 12 hours, rebooting MCU\r\n");
             vTaskDelay(pdMS_TO_TICKS(3000));
-            offline_manage_force_reset();
+            board_system_reset_force();
         }
 
         update_offline_manage();

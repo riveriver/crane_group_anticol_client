@@ -21,6 +21,23 @@ extern UART_HandleTypeDef huart1;
 
 void board_get_mac_address(uint8_t *mac);
 
+void board_system_reset_force(void)
+{
+    __disable_irq();
+    __DSB();
+    __ISB();
+    NVIC_SystemReset();
+    while (1)
+    {
+    }
+}
+
+void board_report_system_info(void)
+{
+    uint8_t mac[6];
+    board_get_mac_address(mac);
+    shell_inform_send((uint8_t *)"MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+}
 void board_setup_components(void) {
     specify_redirect_uart(&huart1);
     setup_uart_service();
