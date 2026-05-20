@@ -6,6 +6,8 @@
 #include "offline_manage_task.h"
 
 #define ENCODER_FAKE_DATA_MODE 0
+extern IWDG_HandleTypeDef hiwdg1;
+#define FEED_SYS_WATCHDOG() HAL_IWDG_Refresh(&hiwdg1)
 
 void board_get_mac_address(uint8_t *mac);
 void board_system_reset_force(void);

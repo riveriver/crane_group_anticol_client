@@ -6,6 +6,7 @@
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_flash.h"
 #include "stm32h7xx_hal_flash_ex.h"
+#include "board_manage.h"
 
 #define LOG_I(...) printf(__VA_ARGS__)
 #define LOG_E(...) printf(__VA_ARGS__)

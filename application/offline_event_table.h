@@ -4,13 +4,10 @@
 #include "offline_manage_task.h"
 #include "main.h"
 
-extern IWDG_HandleTypeDef hiwdg1;
-
 #define GET_TICK_TIME() osKernelGetTickCount()
 #define SET_OFFLINE_LED(STATE) HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, (STATE)) 
 #define SET_HEARTBEAT_LED(STATE) HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, (STATE))
 #define TOGGLE_HEARTBEAT_LED() HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin)
-#define FEED_SYS_WATCHDOG() HAL_IWDG_Refresh(&hiwdg1)
 
 /* ============================================================================
  * PROJECT-SPECIFIC OFFLINE EVENT DEFINITIONS
