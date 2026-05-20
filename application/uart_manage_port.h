@@ -10,6 +10,8 @@ extern "C" {
 #endif
 
 void setup_uart_service(void);
+int shell_inform_send(uint8_t *buf, uint16_t len);
+int mqtt_inform_send(uint8_t *buf, uint16_t len);
 
 #ifdef __cplusplus
 }

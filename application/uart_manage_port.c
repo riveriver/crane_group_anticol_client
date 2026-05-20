@@ -29,10 +29,25 @@ static uint8_t uart8_send_fifo_buff[256U] DMA_BUFFER;
 static uint8_t uart8_recv_buff[2048U] DMA_BUFFER;
 static uint8_t uart8_process_buff[2048U] DMA_BUFFER;
 
+int shell_inform_send(uint8_t *buf, uint16_t len)
+{
+	(void)uart_manage_dma_send_by_name("shell", buf, len);
+	return 0U;
+}
+
+int mqtt_inform_send(uint8_t *buf, uint16_t len)
+{
+	static const uint8_t prefix[] = "1,";
+	const uint16_t prefix_len = (uint16_t)(sizeof(prefix) - 1U);
+	(void)uart_manage_dma_send_by_name("4g", (uint8_t *)prefix, prefix_len);
+	(void)uart_manage_dma_send_by_name("4g", buf, len);
+	return 0U;
+}
+
 static int32_t uart_shell_recv_callback(uint8_t *buf, uint16_t len)
 {
 	/* Check and handle craner AT commands */
-	if (craner_at_handler(buf, len) <= 0)
+	if (craner_at_handler(buf, len, shell_inform_send) <= 0)
 	{
 		return -1;
 	}
@@ -69,7 +84,7 @@ static int32_t uart_4g_recv_callback(uint8_t *buf, uint16_t len)
 
 	if ((len >= 2U) && (buf[0] == '1') && (buf[1] == ','))
 	{
-		if (craner_at_handler(&buf[2], len - 2U) <= 0)
+		if (craner_at_handler(&buf[2], len - 2U, mqtt_inform_send) <= 0)
 		{
 			return -1;
 		}
