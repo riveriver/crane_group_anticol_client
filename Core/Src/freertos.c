@@ -65,10 +65,6 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
-{
-  __set_FAULTMASK(1);
-  NVIC_SystemReset();
-}
+
 /* USER CODE END Application */
 
