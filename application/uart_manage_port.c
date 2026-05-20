@@ -116,10 +116,8 @@ static int32_t uart_4g_recv_callback(uint8_t *buf, uint16_t len)
 	}
 
 	{
-		static const uint8_t prefix[] = "[4G] ";
-		const uint16_t prefix_len = (uint16_t)(sizeof(prefix) - 1U);
-		(void)uart_manage_dma_send_by_name("shell", (uint8_t *)prefix, prefix_len);
-		(void)uart_manage_dma_send_by_name("shell", buf, len);
+		shell_inform_send(buf, len);
+		mqtt_inform_send(buf, len);
 		return 0U;
 	}
 }
