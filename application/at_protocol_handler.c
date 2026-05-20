@@ -1,14 +1,17 @@
 #include "board_manage.h"
 #include "ota_service_task.h"
 #include "at_protocol_handler.h"
+#include "stm32h7xx_hal.h"
+#include "uart_manage_port.h"
 
-int32_t craner_at_handler(const uint8_t *buf, uint16_t len)
+int32_t craner_at_handler(const uint8_t *buf, uint16_t len,at_reply_send_fn_t reply_fn)
 {
 	static const char at_prefix[] = "craner#AT";
 	const uint16_t at_prefix_len = (uint16_t)(sizeof(at_prefix) - 1U);
 	uint16_t index = 0U;
 	char tmp[256];
 	uint16_t tlen;
+	at_reply_send_fn_t send_fn = (reply_fn != NULL) ? reply_fn : shell_inform_send;
 
 	/* Skip leading whitespace */
 	while (index < len)
@@ -41,12 +44,12 @@ int32_t craner_at_handler(const uint8_t *buf, uint16_t len)
 			if (ret == 0)
 			{
 				const char ack[] = "craner#OK\r\n";
-				(void)uart_manage_dma_send_by_name("shell", (uint8_t *)ack, (uint16_t)(sizeof(ack) - 1U));
+				(void)send_fn((uint8_t *)ack, (uint16_t)(sizeof(ack) - 1U));
 				return AT_OK;
 			}
 			{
 				const char err[] = "craner#ERROR\r\n";
-				(void)uart_manage_dma_send_by_name("shell", (uint8_t *)err, (uint16_t)(sizeof(err) - 1U));
+				(void)send_fn((uint8_t *)err, (uint16_t)(sizeof(err) - 1U));
 				return AT_ACTION_EXECUTION_FAILED;
 			}
 		}
@@ -55,14 +58,14 @@ int32_t craner_at_handler(const uint8_t *buf, uint16_t len)
 		if (strstr(tmp, "craner#AT") != NULL)
 		{
 			const char ok[] = "craner#OK\r\n";
-			(void)uart_manage_dma_send_by_name("shell", (uint8_t *)ok, (uint16_t)(sizeof(ok) - 1U));
+			(void)send_fn((uint8_t *)ok, (uint16_t)(sizeof(ok) - 1U));
 			return AT_OK;
 		}
 
 		/* Unknown command */
 		{
 			const char err[] = "craner#UNKNOWN\r\n";
-			(void)uart_manage_dma_send_by_name("shell", (uint8_t *)err, (uint16_t)(sizeof(err) - 1U));
+			(void)send_fn((uint8_t *)err, (uint16_t)(sizeof(err) - 1U));
 		}
 
 		return AT_UNKNOWN_CMD;
