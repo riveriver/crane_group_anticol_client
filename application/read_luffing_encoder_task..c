@@ -7,9 +7,9 @@
 #define LOG_I(...) printf(__VA_ARGS__)
 #define LOG_E(...) printf(__VA_ARGS__)
 
-extern UART_HandleTypeDef huart2; 
+extern UART_HandleTypeDef huart3; 
 
-#define MB_RTU_INTERFACE huart2
+#define MB_RTU_INTERFACE huart3
 #define MB_TIMEOUT_MS 200
 
 #define MB_SLAVE_ADDR 0x0001
