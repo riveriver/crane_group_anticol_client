@@ -189,7 +189,8 @@ void report_atc_data_task(void *argument)
         neighbor_report_interface_send(frame, sizeof(frame));
 
         packet_seq++;
-
+        
+        offline_manage_update_event(OFFLINE_PUBLISH_MQTT);
         vTaskDelay(period);
     }
 }

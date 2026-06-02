@@ -98,6 +98,17 @@ struct offline_manage_obj offline_event_table[] =
         .online_first_func = NULL,
         .online_func = NULL
     },
+    {
+        .event = OFFLINE_PUBLISH_MQTT,
+        .enable = ENABLE,
+        .error_level = OFFLINE_ERROR_LEVEL,
+        .group_id = 3,
+        .offline_time = 1000,
+        .offline_first_func = NULL,
+        .offline_func = NULL,
+        .online_first_func = NULL,
+        .online_func = NULL
+    },
 };
 
 /* Table size for runtime use (instead of sizeof calculations) */
