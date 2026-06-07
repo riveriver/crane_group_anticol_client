@@ -1,6 +1,6 @@
 #include "ota_ymodem_protocol.h"
 
-#include <string.h>
+#include "board_manage.h"
 
 #define LOG_D(...) printf(__VA_ARGS__)
 #define LOG_I(...) printf(__VA_ARGS__)

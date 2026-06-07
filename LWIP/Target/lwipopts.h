@@ -160,7 +160,7 @@ void sys_unlock_tcpip_core(void);
 void sys_check_core_locking(void);
 void sys_mark_tcpip_thread(void);
 
-#define SNTP_SET_SYSTEM_TIME(sec) sntp_time_received_callback(sec)
+//#define SNTP_SET_SYSTEM_TIME(sec) sntp_time_received_callback(sec)
 /* USER CODE END 1 */
 
 #ifdef __cplusplus

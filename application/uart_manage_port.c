@@ -1,5 +1,6 @@
+#include "board_manage.h"
 #include "uart_manage.h"
-#include <string.h>
+
 #include "am_modbus.h"
 #include "at_protocol_handler.h"
 #include "ota_service_task.h"
@@ -29,13 +30,13 @@ static uint8_t uart8_send_fifo_buff[256U] DMA_BUFFER;
 static uint8_t uart8_recv_buff[2048U] DMA_BUFFER;
 static uint8_t uart8_process_buff[2048U] DMA_BUFFER;
 
-int shell_inform_send(uint8_t *buf, uint16_t len)
+int32_t shell_inform_send(uint8_t *buf, uint16_t len)
 {
 	(void)uart_manage_dma_send_by_name("shell", buf, len);
 	return 0U;
 }
 
-int mqtt_inform_send(uint8_t *buf, uint16_t len)
+int32_t mqtt_inform_send(uint8_t *buf, uint16_t len)
 {
 	static const uint8_t prefix[] = "1,";
 	const uint16_t prefix_len = (uint16_t)(sizeof(prefix) - 1U);
@@ -158,7 +159,7 @@ const uart_inferface_t uart_manage_table[] = {
 const uint16_t uart_manage_table_size =
   (uint16_t)(sizeof(uart_manage_table) / sizeof(uart_manage_table[0]));
 
-void setup_uart_service(void)
+void init_uart_service(void)
 {
   (void)uart_manage_init_table(uart_manage_table, uart_manage_table_size);
   uart_manage_enable_dma_recv_by_name("shell");
@@ -233,8 +234,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     }
     portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 	/* support am_modbus end*/
-
-    (void *)huart;
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
@@ -290,7 +289,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 
 void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
 {
-  (void *)huart;
+  (void)huart;
 }
 
 

@@ -1,13 +1,12 @@
 #include "eth_manage_task.h"
-#include "main.h"
+
+#include "lwip.h"
 #include "lwip/ip4_addr.h"
-#include <stdbool.h>
 #include "lwip/netif.h"
 /* UDP receive and parse for load weight */
 #include "lwip/pbuf.h"
 #include "lwip/udp.h"
-#include <stdint.h>
-#include <string.h>
+
 #include "board_manage.h"
 #include "modbus_register_interface.h"
 #include "modbus_register_database.h"
@@ -58,11 +57,6 @@ static uint16_t read_u16_le(const uint8_t *data)
 static uint32_t read_u32_le(const uint8_t *data)
 {
   return (uint32_t)data[0] | ((uint32_t)data[1] << 8U) | ((uint32_t)data[2] << 16U) | ((uint32_t)data[3] << 24U);
-}
-
-static int32_t scale_to_milli(float value)
-{
-  return (int32_t)(value * 1000.0f);
 }
 
 static bool parse_load_metrics(const uint8_t *payload,

@@ -1,12 +1,12 @@
 #include "ota_service_task.h"
 #include "ota_ymodem_protocol.h"
-#include <string.h>
-#include "cmsis_os.h"
-#include "usart.h"
+
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_flash.h"
 #include "stm32h7xx_hal_flash_ex.h"
+
 #include "board_manage.h"
+#include "uart_manage.h"
 #include "offline_manage_task.h"
 
 #define LOG_I(...) printf(__VA_ARGS__)
@@ -194,7 +194,7 @@ static int ota_flash_program_flashword(uint32_t addr, const uint8_t *data)
 	}
 
 	HAL_FLASH_Unlock();
-	HAL_StatusTypeDef st = HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, addr, (uint64_t)data);
+	HAL_StatusTypeDef st = HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, addr, (uint64_t)(uintptr_t)data);
 	HAL_FLASH_Lock();
 
 	if (st != HAL_OK)

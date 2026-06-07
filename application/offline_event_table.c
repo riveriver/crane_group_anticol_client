@@ -1,4 +1,5 @@
 #include "offline_event_table.h"
+#include "board_manage.h"
 #include "offline_manage_task.h"
 #include "modbus_register_database.h"
 #include "modbus_register_interface.h"

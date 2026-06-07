@@ -26,7 +26,7 @@ extern "C" {
  * different database implementations and sizes while sharing the same interface code.
  * Database is registered at initialization, not embedded in the interface.
  */
-uint32_t setup_modbus_register(uint16_t *reg_buffer, uint16_t buffer_size);
+uint32_t init_modbus_register(uint16_t *reg_buffer, uint16_t buffer_size);
 
 /**
  * Read single 16-bit register by address

@@ -1,4 +1,6 @@
 #include "am_modbus.h"
+
+#include "board_manage.h"
 #include "modbus_register_database.h"
 #include "modbus_register_interface.h"
 
@@ -14,11 +16,11 @@ extern UART_HandleTypeDef huart7;
 
 static modbusHandler_t encoder_forward_server;
 
-void setup_encoder_forward_server(void){
+void encoder_forward_init_server(void){
 
-    uint32_t err = setup_modbus_register(holding_reg_data, REG_HOLDING_SIZE);
+    uint32_t err = init_modbus_register(holding_reg_data, REG_HOLDING_SIZE);
     if (err != ERR_OK) {
-        LOG_E("Failed to initialize Modbus register interface: 0x%04x\n", err);
+        LOG_E("Failed to initialize Modbus register interface: %lu\n", (unsigned long)err);
     } else {
         LOG_I("Modbus register interface initialized successfully\n");
     }

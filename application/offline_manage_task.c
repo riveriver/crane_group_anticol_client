@@ -1,9 +1,7 @@
 #include "offline_manage_task.h"
-#include "offline_event_table.h"
-#include <stdio.h>
-#include <string.h>
-#include "main.h"
+
 #include "board_manage.h"
+#include "offline_event_table.h"
 
 #define LOG_D(...) // printf(__VA_ARGS__)
 #define LOG_I(...) printf(__VA_ARGS__)
@@ -23,32 +21,6 @@ extern int offline_event_table_size;
 extern offline_event offline_reset_event;
 
 struct offline_manage_obj offline_manage[OFFLINE_EVENT_MAX_NUM];
-
-static void offline_manage_force_reset(void)
-{
-    __disable_irq();
-    __DSB();
-    __ISB();
-    NVIC_SystemReset();
-    while (1)
-    {
-    }
-}
-
-static uint8_t offline_manage_get_led_group_id(void)
-{
-    for (int i = 1; i < OFFLINE_EVENT_MAX_NUM; i++)
-    {
-        if ((offline_manage[i].enable) && (offline_manage[i].online_state == STATE_OFFLINE) && (offline_manage[i].group_id != 0U))
-        {
-            return offline_manage[i].group_id;
-        }
-    }
-
-    return 0U;
-}
-
-
 
 static char offline_event_msg[256] = {0};
 static void build_offline_event_msg(void)
@@ -309,9 +281,7 @@ void offline_manage_task(void *argument)
 {
     setup_offline_manage();
     const TickType_t xPeriod = pdMS_TO_TICKS(OFFLINE_TASK_PERIOD_MS);
-    const TickType_t xManagePeriod = pdMS_TO_TICKS(OFFLINE_MANAGE_PERIOD_MS);
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    TickType_t xManageTick = 0;
     uint32_t boot_tick = GET_TICK_TIME();
     for (;;)
     {   

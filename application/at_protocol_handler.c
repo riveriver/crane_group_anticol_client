@@ -118,7 +118,7 @@ int32_t usr_at_handler(const uint8_t *buf, uint16_t len)
 	if (memcmp(&buf[index], at_prefix, at_prefix_len) == 0)
 	{
 		/* Forward the original payload to the 4G module first. */
-		(void)uart_manage_dma_send_by_name("4g", buf, len);
+		(void)uart_manage_dma_send_by_name("4g", (uint8_t *)buf, len);
 
 		/* Add trailing CRLF if the command does not already end with it. */
 		if ((len > 0U) && (buf[len - 1U] != '\r') && (buf[len - 1U] != '\n'))

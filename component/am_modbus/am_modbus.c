@@ -6,18 +6,10 @@
  *      Adapted from https://github.com/smarmengol/Modbus-Master-Slave-for-Arduino
  */
 
-#include <stdio.h>
-
-#include "main.h"
-
-#include "cmsis_os.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "timers.h"
-#include "semphr.h"
 
 #include "am_modbus.h"
+
+#include "board_manage.h"
 
 
 #define LOG_D(...)   //printf(__VA_ARGS__)
@@ -33,13 +25,13 @@ static void debug_log_recv_frame(modbusHandler_t *modH)
     }
     char uart_str[8] = "unknown";
     if(modH->port == &huart2){
-        strcpy(uart_str, "U2");
+        snprintf(uart_str, sizeof(uart_str), "U2");
     }else if(modH->port == &huart3){
-        strcpy(uart_str, "U3");
+        snprintf(uart_str, sizeof(uart_str), "U3");
     }else if(modH->port == &huart7){
-        strcpy(uart_str, "U7");
+        snprintf(uart_str, sizeof(uart_str), "U7");
     }else if(modH->port == &huart8){
-        strcpy(uart_str, "U8");
+        snprintf(uart_str, sizeof(uart_str), "U8");
     }
 	int len = snprintf(am_modbus_debug_buf, sizeof(am_modbus_debug_buf), "[%s]R:", uart_str);
 	for (uint16_t i = 0; i < modH->u8BufferSize && len < (int)sizeof(am_modbus_debug_buf) - 4; i++) {

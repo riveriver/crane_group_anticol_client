@@ -5,7 +5,7 @@
 #include "board_manage.h"
 #include "uart_manage.h"
 #include "ota_service_task.h"
-#include <string.h>
+#include "offline_manage_task.h"
 
 #define LOG_D(...) // printf(__VA_ARGS__)
 #define LOG_I(...) printf(__VA_ARGS__)  

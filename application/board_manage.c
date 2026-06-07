@@ -3,14 +3,17 @@
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "uart_manage_port.h"
-#include "offline_manage_task.h"
-#include "eth_manage_task.h"
+
 #include "modbus_register_interface.h"
 #include "modbus_register_database.h"
+#include "printf_redirect.h"
+#include "ota_service_task.h"
+#include "uart_manage_port.h"
+#include "eth_manage_task.h"
+#include "offline_manage_task.h"
 #include "read_swing_encoder_task.h"
 #include "read_luffing_encoder_task.h"
-#include "ota_service_task.h"
+#include "encoder_forward_server.h"
 #include "report_atc_data_task.h"
 
 #define LOG_D(fmt, ...) printf("[D][%s:%d] " fmt, __func__, __LINE__, ##__VA_ARGS__)
@@ -34,8 +37,8 @@ void board_system_reset_force(void)
 
 void board_setup_components(void) {
     specify_redirect_uart(&huart1);
-    setup_uart_service();
-    setup_encoder_forward_server();
+    init_uart_service();
+    encoder_forward_init_server();
     (void)ota_init_service(0x08020000U, 896U * 1024U);
 }
 

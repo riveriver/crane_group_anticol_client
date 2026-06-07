@@ -12,7 +12,7 @@ static uint16_t g_register_count = 0;
 static osMutexId_t g_reg_mutex = NULL;
 
 /* Initialize register interface with external database */
-uint32_t setup_modbus_register(uint16_t *reg_buffer, uint16_t buffer_size)
+uint32_t init_modbus_register(uint16_t *reg_buffer, uint16_t buffer_size)
 {
   if (reg_buffer == NULL || buffer_size == 0) {
     return ERR_INVALID_PARAM;

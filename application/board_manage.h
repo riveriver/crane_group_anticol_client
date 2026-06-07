@@ -1,8 +1,18 @@
 #pragma once
+
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
 #include "main.h"
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
+#include "timers.h"
+#include "semphr.h"
+
 #include "offline_manage_task.h"
 
 #define ENCODER_FAKE_DATA_MODE 0
