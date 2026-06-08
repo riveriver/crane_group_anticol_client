@@ -173,7 +173,6 @@ int uart_manage_init_table(const uart_inferface_t *table, uint16_t table_size)
 {
   if (table == NULL || table_size == 0U || table_size > UART_MANAGE_MAX_OBJECTS)
   {
-    LOGE("Invalid uart manage table\r\n");
     return -1;
   }
 
@@ -181,11 +180,8 @@ int uart_manage_init_table(const uart_inferface_t *table, uint16_t table_size)
   {
     if (uart_manage_register_interface((uart_inferface_t *)&table[i]) != 0)
     {
-      LOGE("Failed to register uart interface: %s\r\n", table[i].name);
       return -1;
     }
-    LOGI("Registered uart interface: %s\r\n", table[i].name);
-    (void)uart_manage_enable_dma_recv(table[i].uart_h);
   }
 
   return 0;
