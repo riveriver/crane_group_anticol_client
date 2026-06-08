@@ -1,15 +1,25 @@
 #include "uart_manage.h"
 
-#include <stdint.h>
-#include <string.h>
 
-#include "main.h"
-#include "cmsis_os.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "stm32h7xx_hal_uart.h"
+#define LOGD(...) printf(__VA_ARGS__)
+#define LOGI(...) printf(__VA_ARGS__)
+#define LOGE(...) printf(__VA_ARGS__)
 
 static uart_inferface_t uart_manage[UART_MANAGE_MAX_OBJECTS] = {0};
+
+#if UART_MANAGE_RECV_RING_STATS_ENABLE
+#define UART_RECV_RING_NEAR_FULL_PERCENT 80U
+
+static uint8_t uart_manage_recv_ring_is_near_full(uint16_t size, lwrb_sz_t used)
+{
+  if (size == 0U)
+  {
+    return 0U;
+  }
+
+  return (used >= (((lwrb_sz_t)size * UART_RECV_RING_NEAR_FULL_PERCENT) / 100U)) ? 1U : 0U;
+}
+#endif
 
 static inline uintptr_t dma_align_down_32(uintptr_t addr)
 {
@@ -23,26 +33,26 @@ static inline uintptr_t dma_align_up_32(uintptr_t addr)
 
 static inline void dma_clean_cache_by_addr(const void *addr, uint32_t len)
 {
-#if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-  uintptr_t start = dma_align_down_32((uintptr_t)addr);
-  uintptr_t end   = dma_align_up_32((uintptr_t)addr + len);
-  SCB_CleanDCache_by_Addr((uint32_t *)start, (int32_t)(end - start));
-#else
+// #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+//   uintptr_t start = dma_align_down_32((uintptr_t)addr);
+//   uintptr_t end   = dma_align_up_32((uintptr_t)addr + len);
+//   SCB_CleanDCache_by_Addr((uint32_t *)start, (int32_t)(end - start));
+// #else
   (void)addr;
   (void)len;
-#endif
+// #endif
 }
 
 static inline void dma_invalidate_cache_by_addr(const void *addr, uint32_t len)
 {
-#if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-  uintptr_t start = dma_align_down_32((uintptr_t)addr);
-  uintptr_t end   = dma_align_up_32((uintptr_t)addr + len);
-  SCB_InvalidateDCache_by_Addr((uint32_t *)start, (int32_t)(end - start));
-#else
+// #if defined (__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+//   uintptr_t start = dma_align_down_32((uintptr_t)addr);
+//   uintptr_t end   = dma_align_up_32((uintptr_t)addr + len);
+//   SCB_InvalidateDCache_by_Addr((uint32_t *)start, (int32_t)(end - start));
+// #else
   (void)addr;
   (void)len;
-#endif
+// #endif
 }
 
 static int uart_manage_find_slot_by_huart(UART_HandleTypeDef *huart)
@@ -163,6 +173,7 @@ int uart_manage_init_table(const uart_inferface_t *table, uint16_t table_size)
 {
   if (table == NULL || table_size == 0U || table_size > UART_MANAGE_MAX_OBJECTS)
   {
+    LOGE("Invalid uart manage table\r\n");
     return -1;
   }
 
@@ -170,8 +181,11 @@ int uart_manage_init_table(const uart_inferface_t *table, uint16_t table_size)
   {
     if (uart_manage_register_interface((uart_inferface_t *)&table[i]) != 0)
     {
+      LOGE("Failed to register uart interface: %s\r\n", table[i].name);
       return -1;
     }
+    LOGI("Registered uart interface: %s\r\n", table[i].name);
+    (void)uart_manage_enable_dma_recv(table[i].uart_h);
   }
 
   return 0;
@@ -196,11 +210,6 @@ void uart_manage_enable_dma_recv(UART_HandleTypeDef *huart)
     return;
   }
 
-  if (st == HAL_BUSY)
-  {
-    HAL_Delay(100);
-  }
-
   (void)HAL_UART_DMAStop(m_obj->uart_h);
   m_obj->uart_h->Instance->ICR = USART_ICR_FECF | USART_ICR_ORECF | USART_ICR_NECF | USART_ICR_PECF | USART_ICR_IDLECF;
   (void)m_obj->uart_h->Instance->RDR;
@@ -209,7 +218,7 @@ void uart_manage_enable_dma_recv(UART_HandleTypeDef *huart)
   {
     __HAL_DMA_DISABLE_IT(m_obj->dma_h, DMA_IT_HT);
   }else{
-    printf("double enable idle dma recv failed[%p]\r\n", (void *)m_obj->uart_h);
+    LOGE("double enable idle dma recv failed[%X]\r\n",m_obj->uart_h);
   }
 }
 
@@ -217,36 +226,12 @@ void uart_manage_enable_dma_recv_by_name(const char *name)
 {
   uart_inferface_t *m_obj = uart_manage_get_obj_by_name(name);
 
-  if (m_obj == NULL || m_obj->dma_h == NULL || m_obj->uart_h == NULL)
+  if (m_obj == NULL)
   {
     return;
   }
 
-  m_obj->uart_h->Instance->ICR = USART_ICR_FECF | USART_ICR_ORECF | USART_ICR_NECF | USART_ICR_PECF | USART_ICR_IDLECF;
-  (void)m_obj->uart_h->Instance->RDR;
-
-  HAL_StatusTypeDef st = HAL_UARTEx_ReceiveToIdle_DMA(m_obj->uart_h, m_obj->recv_buffer, m_obj->recv_buffer_size);
-  if (st == HAL_OK)
-  {
-    __HAL_DMA_DISABLE_IT(m_obj->dma_h, DMA_IT_HT);
-    return;
-  }
-
-  if (st == HAL_BUSY)
-  {
-    HAL_Delay(100);
-  }
-
-  (void)HAL_UART_DMAStop(m_obj->uart_h);
-  m_obj->uart_h->Instance->ICR = USART_ICR_FECF | USART_ICR_ORECF | USART_ICR_NECF | USART_ICR_PECF | USART_ICR_IDLECF;
-  (void)m_obj->uart_h->Instance->RDR;
-  st = HAL_UARTEx_ReceiveToIdle_DMA(m_obj->uart_h, m_obj->recv_buffer, m_obj->recv_buffer_size);
-  if (st == HAL_OK)
-  {
-    __HAL_DMA_DISABLE_IT(m_obj->dma_h, DMA_IT_HT);
-  }else{
-    printf("double enable idle dma recv failed[%p]\r\n", (void *)m_obj->uart_h);
-  }
+  uart_manage_enable_dma_recv(m_obj->uart_h);
 }
 
 static int uart_manage_dma_send_impl(uart_inferface_t *m_obj, uint8_t *buf, uint16_t len)
@@ -258,6 +243,11 @@ static int uart_manage_dma_send_impl(uart_inferface_t *m_obj, uint8_t *buf, uint
 
   uint16_t to_send_len;
   uint16_t to_tx_fifo_len;
+
+  if ((m_obj->is_sending != 0U) && (m_obj->uart_h->gState != HAL_UART_STATE_BUSY_TX))
+  {
+    m_obj->is_sending = 0U;
+  }
 
   if (m_obj->is_sending == 0U)
   {
@@ -296,13 +286,17 @@ static int uart_manage_dma_send_impl(uart_inferface_t *m_obj, uint8_t *buf, uint
     memcpy(m_obj->send_buffer, buf, to_send_len);
     dma_clean_cache_by_addr(m_obj->send_buffer, to_send_len);
     m_obj->is_sending = 1U;
-    HAL_UART_Transmit_DMA(m_obj->uart_h, m_obj->send_buffer, to_send_len);
+    if (HAL_UART_Transmit_DMA(m_obj->uart_h, m_obj->send_buffer, to_send_len) != HAL_OK)
+    {
+      m_obj->is_sending = 0U;
+      return -1;
+    }
   }
   if (to_tx_fifo_len > 0)
   {
-    uint8_t put_len;
+    int put_len;
     put_len = fifo_s_puts(&m_obj->send_fifo, (char *)(buf) + to_send_len, to_tx_fifo_len);
-    if (put_len != to_tx_fifo_len)
+    if (put_len != (int)to_tx_fifo_len)
     {
       return -1;
     }
@@ -348,14 +342,32 @@ void uart_manage_send_completed_hook(UART_HandleTypeDef *huart)
         }
       fifo_s_gets(&m_obj->send_fifo, (char *)m_obj->send_buffer, send_num);
       dma_clean_cache_by_addr(m_obj->send_buffer, send_num);
-      m_obj->is_sending = 1U;
-      HAL_UART_Transmit_DMA(m_obj->uart_h, m_obj->send_buffer, send_num);
+      if (HAL_UART_Transmit_DMA(m_obj->uart_h, m_obj->send_buffer, send_num) == HAL_OK)
+      {
+        m_obj->is_sending = 1U;
+      }
+      else
+      {
+        m_obj->is_sending = 0U;
+      }
     }
     else
     {
       m_obj->is_sending = 0U;
     }
     return;
+}
+
+void uart_manage_reset_dma_send(UART_HandleTypeDef *huart)
+{
+  uart_inferface_t *m_obj = uart_manage_get_obj(huart);
+
+  if (m_obj == NULL)
+  {
+    return;
+  }
+
+  m_obj->is_sending = 0U;
 }
 
 int uart_manage_write_to_recv_ring(uart_inferface_t *m_obj, uint8_t *buf, uint16_t len)
@@ -369,15 +381,62 @@ int uart_manage_write_to_recv_ring(uart_inferface_t *m_obj, uint8_t *buf, uint16
   lwrb_sz_t free_len = lwrb_get_free(&m_obj->process_ring_buffer);
   if (to_write_len > free_len)
   {
+#if UART_MANAGE_RECV_RING_STATS_ENABLE
+    m_obj->recv_ring_overflow_count++;
+    m_obj->recv_ring_drop_bytes += (uint32_t)(to_write_len - free_len);
+#endif
     to_write_len = free_len;
   }
 
-  if (lwrb_write(&m_obj->process_ring_buffer, buf, to_write_len) != to_write_len)
+  if ((to_write_len > 0U) && (lwrb_write(&m_obj->process_ring_buffer, buf, to_write_len) != to_write_len))
   {
     return -1;
   }
+
+#if UART_MANAGE_RECV_RING_STATS_ENABLE
+  lwrb_sz_t used_len = lwrb_get_full(&m_obj->process_ring_buffer);
+  if (used_len > (lwrb_sz_t)m_obj->recv_ring_high_watermark)
+  {
+    m_obj->recv_ring_high_watermark = (uint16_t)used_len;
+  }
+#endif
+
   return (int)to_write_len;
 }
+
+#if UART_MANAGE_RECV_RING_STATS_ENABLE
+int uart_manage_get_recv_ring_stats(uart_inferface_t *m_obj, uart_recv_ring_stats_t *stats)
+{
+  if ((m_obj == NULL) || (stats == NULL))
+  {
+    return -1;
+  }
+
+  lwrb_sz_t used_len = lwrb_get_full(&m_obj->process_ring_buffer);
+  lwrb_sz_t free_len = lwrb_get_free(&m_obj->process_ring_buffer);
+
+  if (used_len > (lwrb_sz_t)m_obj->recv_ring_high_watermark)
+  {
+    m_obj->recv_ring_high_watermark = (uint16_t)used_len;
+  }
+
+  stats->size = m_obj->process_buffer_size;
+  stats->used = (uint16_t)used_len;
+  stats->free = (uint16_t)free_len;
+  stats->high_watermark = m_obj->recv_ring_high_watermark;
+  stats->drop_bytes = m_obj->recv_ring_drop_bytes;
+  stats->overflow_count = m_obj->recv_ring_overflow_count;
+  stats->near_full = uart_manage_recv_ring_is_near_full(m_obj->process_buffer_size, used_len);
+
+  return 0;
+}
+
+int uart_manage_get_recv_ring_stats_by_name(const char *name, uart_recv_ring_stats_t *stats)
+{
+  uart_inferface_t *m_obj = uart_manage_get_obj_by_name(name);
+  return uart_manage_get_recv_ring_stats(m_obj, stats);
+}
+#endif
 
 void uart_manage_recv_idle_hook(uart_inferface_t *m_obj, interrput_type int_type, uint16_t size)
 {
@@ -399,12 +458,3 @@ void uart_manage_recv_idle_hook(uart_inferface_t *m_obj, interrput_type int_type
 
   uart_manage_write_to_recv_ring(m_obj, m_obj->recv_buffer, size);
 }
-
-
-
-
-
-
-
-
-
