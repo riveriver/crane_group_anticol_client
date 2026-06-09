@@ -206,16 +206,16 @@ void uart_manage_enable_dma_recv(UART_HandleTypeDef *huart)
     return;
   }
 
-  (void)HAL_UART_DMAStop(m_obj->uart_h);
-  m_obj->uart_h->Instance->ICR = USART_ICR_FECF | USART_ICR_ORECF | USART_ICR_NECF | USART_ICR_PECF | USART_ICR_IDLECF;
-  (void)m_obj->uart_h->Instance->RDR;
-  st = HAL_UARTEx_ReceiveToIdle_DMA(m_obj->uart_h, m_obj->recv_buffer, m_obj->recv_buffer_size);
-  if (st == HAL_OK)
-  {
-    __HAL_DMA_DISABLE_IT(m_obj->dma_h, DMA_IT_HT);
-  }else{
-    LOGE("double enable idle dma recv failed[%X]\r\n",m_obj->uart_h);
-  }
+  // (void)HAL_UART_DMAStop(m_obj->uart_h);
+  // m_obj->uart_h->Instance->ICR = USART_ICR_FECF | USART_ICR_ORECF | USART_ICR_NECF | USART_ICR_PECF | USART_ICR_IDLECF;
+  // (void)m_obj->uart_h->Instance->RDR;
+  // st = HAL_UARTEx_ReceiveToIdle_DMA(m_obj->uart_h, m_obj->recv_buffer, m_obj->recv_buffer_size);
+  // if (st == HAL_OK)
+  // {
+  //   __HAL_DMA_DISABLE_IT(m_obj->dma_h, DMA_IT_HT);
+  // }else{
+  //   LOGE("double enable idle dma recv failed[%X]\r\n",m_obj->uart_h);
+  // }
 }
 
 void uart_manage_enable_dma_recv_by_name(const char *name)
