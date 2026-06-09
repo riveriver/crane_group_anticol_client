@@ -16,11 +16,7 @@ offline_event offline_reset_event = NO_OFFLINE;
 /* System protection: log and reset */
 void system_protect_offline_first(void)
 {
-    LOG_E("System protect triggered by offline event[%d]\r\n", offline_reset_event);
-    /* wait to ensure log is flushed before reset */
-    // osDelay(1000);
-    // __set_FAULTMASK(1);
-    // NVIC_SystemReset();
+    board_system_reset_force();
 }
 
 void system_protect_offline(void)
@@ -30,7 +26,6 @@ void system_protect_offline(void)
 
 void read_load_weight_offline_first(void)
 {
-    LOG_E("Load weight data offline\r\n");
     mb_reg_write_bit(REG_DATA_VAILD, REG_DATA_VAILD_BIT_LOAD_WEIGHT, false);
     mb_reg_write_float(REG_LOAD_WEIGHT, 0.0f);
     mb_reg_write_float(REG_LOAD_WEIGHT_PCT, 0.0f);
@@ -60,7 +55,7 @@ struct offline_manage_obj offline_event_table[] =
         .enable = ENABLE,
         .error_level = OFFLINE_ERROR_LEVEL,
         .group_id = 3,
-        .offline_time = 1000,
+        .offline_time = 3000,
         .offline_first_func = NULL,
         .offline_func = NULL,
         .online_first_func = NULL,
@@ -71,7 +66,7 @@ struct offline_manage_obj offline_event_table[] =
         .enable = ENABLE,
         .error_level = OFFLINE_ERROR_LEVEL,
         .group_id = 2,
-        .offline_time = 1000,
+        .offline_time = 3000,
         .offline_first_func = NULL,
         .offline_func = NULL,
         .online_first_func = NULL,
@@ -82,7 +77,7 @@ struct offline_manage_obj offline_event_table[] =
         .enable = ENABLE,
         .error_level = OFFLINE_ERROR_LEVEL,
         .group_id = 2,
-        .offline_time = 1000,
+        .offline_time = 3000,
         .offline_first_func = NULL,
         .offline_func = NULL,
         .online_first_func = NULL,
@@ -93,7 +88,7 @@ struct offline_manage_obj offline_event_table[] =
         .enable = DISABLE,
         .error_level = OFFLINE_WARNING_LEVEL,
         .group_id = 1,
-        .offline_time = 1000,
+        .offline_time = 3000,
         .offline_first_func = read_load_weight_offline_first,
         .offline_func = NULL,
         .online_first_func = NULL,
@@ -104,7 +99,7 @@ struct offline_manage_obj offline_event_table[] =
         .enable = ENABLE,
         .error_level = OFFLINE_ERROR_LEVEL,
         .group_id = 3,
-        .offline_time = 1000,
+        .offline_time = 3000,
         .offline_first_func = NULL,
         .offline_func = NULL,
         .online_first_func = NULL,

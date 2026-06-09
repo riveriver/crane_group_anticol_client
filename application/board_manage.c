@@ -28,11 +28,8 @@ void board_system_reset_force(void)
 {
     __disable_irq();
     __DSB();
-    __ISB();
     NVIC_SystemReset();
-    while (1)
-    {
-    }
+
 }
 
 void board_setup_components(void) {
