@@ -196,7 +196,7 @@ void report_atc_data_task(void *argument)
             continue;
         }
 
-        vTaskDelayU(period);
+        vTaskDelay(period);
         offline_manage_update_event(OFFLINE_PUBLISH_MQTT);
 
         send_hourly_4g_command();
