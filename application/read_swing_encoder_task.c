@@ -50,7 +50,7 @@ void read_swing_encoder_thread(void *argument){
     telegram.u16CoilsNo = MB_READ_LEN;
     telegram.u16reg = recv_buff;
 
-    const TickType_t xFrequency = pdMS_TO_TICKS(100);
+    const TickType_t xFrequency = pdMS_TO_TICKS(250);
     for(;;)
     {
 
