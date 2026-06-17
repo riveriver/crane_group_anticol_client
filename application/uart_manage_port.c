@@ -47,15 +47,19 @@ int32_t mqtt_inform_send(uint8_t *buf, uint16_t len)
 
 static int32_t uart_shell_recv_callback(uint8_t *buf, uint16_t len)
 {
-	/* Check and handle craner AT commands */
-	if (craner_at_handler(buf, len, shell_inform_send) < 0)
+	int32_t ret;
+
+	/* AT command packets should be consumed immediately after a prefix match. */
+	ret = craner_at_handler(buf, len, shell_inform_send);
+	if (ret != AT_PREFIX_NOT_MATCH)
 	{
-		return -1;
+		return (ret < 0) ? -1 : 0;
 	}
 
-	if (usr_at_handler(buf, len) < 0)
+	ret = usr_at_handler(buf, len);
+	if (ret != AT_PREFIX_NOT_MATCH)
 	{
-		return -1;
+		return (ret < 0) ? -1 : 0;
 	}
 
 	{
@@ -74,21 +78,21 @@ static int32_t uart_4g_recv_callback(uint8_t *buf, uint16_t len)
 		return -1;
 	}
 
-	if (len < 64U)
-	{
-		LOG_D("[4G]recv %.*s\r\n", (int)len, (char *)buf);
-	}
-	else
-	{
-		LOG_D("[4G]recv %u bytes\r\n", len);
-	}
-
 	if ((len >= 2U) && (buf[0] == '1') && (buf[1] == ','))
 	{
-		if (craner_at_handler(&buf[2], len - 2U, mqtt_inform_send) < 0)
+		int32_t ret;
+
+		ret = craner_at_handler(&buf[2], len - 2U, mqtt_inform_send);
+		if (ret != AT_PREFIX_NOT_MATCH)
 		{
-			return -1;
+			return (ret < 0) ? -1 : 0;
 		}
+		ret = usr_at_handler(&buf[2], len - 2U);
+		if (ret != AT_PREFIX_NOT_MATCH)
+		{
+			return (ret < 0) ? -1 : 0;
+		}
+		return 0U;
 	}
 	else if ((len >= 2U) && (buf[0] == '2') && (buf[1] == ','))
 	{

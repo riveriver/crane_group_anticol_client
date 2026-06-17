@@ -4,6 +4,8 @@
 #include "modbus_register_database.h"
 #include "modbus_register_interface.h"
 
+#include <stdio.h>
+
 #define LOG_D(...) // printf(__VA_ARGS__)
 #define LOG_I(...) printf(__VA_ARGS__)
 #define LOG_E(...) printf(__VA_ARGS__)
@@ -13,15 +15,28 @@ offline_event offline_reset_event = NO_OFFLINE;
  * PROJECT-SPECIFIC EVENT HANDLER IMPLEMENTATIONS
  * ============================================================================ */
 
-/* System protection: log and reset */
+uint32_t protect_trigger_time = 0;
 void system_protect_offline_first(void)
 {
-    board_system_reset_force();
+    LOG_E("System protect triggered by offline event[%d]\r\n", offline_reset_event);
+    protect_trigger_time = osKernelGetTickCount();
 }
 
 void system_protect_offline(void)
 {
-    LOG_D("system protect caused by offline event[%d]\r\n", offline_reset_event);
+    if(protect_trigger_time == 0){
+        protect_trigger_time = osKernelGetTickCount();
+    }
+    if (osKernelGetTickCount() - protect_trigger_time > pdMS_TO_TICKS(10 * 60 * 1000)){
+        __set_FAULTMASK(1);
+        NVIC_SystemReset();
+    }
+}
+
+void system_protect_online_first(void)
+{
+    LOG_I("system protect online, reset trigger time\r\n");
+    protect_trigger_time = 0;
 }
 
 void read_load_weight_offline_first(void)
@@ -47,7 +62,7 @@ struct offline_manage_obj offline_event_table[] =
         .offline_time = 0,
         .offline_first_func = system_protect_offline_first,
         .offline_func = system_protect_offline,
-        .online_first_func = NULL,
+        .online_first_func = system_protect_online_first,
         .online_func = NULL
     },
     {
