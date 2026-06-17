@@ -313,6 +313,7 @@ void offline_manage_task(void *argument)
     TickType_t xLastWakeTime = xTaskGetTickCount();
     TickType_t xManageTick = 0;
     uint32_t boot_tick = GET_TICK_TIME();
+    uint32_t hreatbeat_tick = boot_tick;
     for (;;)
     {   
         vTaskDelayUntil(&xLastWakeTime, xPeriod);
@@ -323,6 +324,10 @@ void offline_manage_task(void *argument)
             LOG_I("system uptime reached 12 hours, rebooting MCU\r\n");
             vTaskDelay(pdMS_TO_TICKS(3000));
             board_system_reset_force();
+        }
+        if((uint32_t)(now - hreatbeat_tick) >= 1000){
+            HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+            hreatbeat_tick = now;
         }
 
         update_offline_manage();

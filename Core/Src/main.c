@@ -198,9 +198,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    printf("We should never get here as control is now taken by the scheduler\r\n");
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-    HAL_Delay(200);
   }
   /* USER CODE END 3 */
 }
