@@ -181,7 +181,8 @@ extern ota_service_t g_ota;
 void report_atc_data_task(void *argument)
 {
     (void)argument;
-    const TickType_t period = pdMS_TO_TICKS(500); // 5Hz
+    const TickType_t period = pdMS_TO_TICKS(1000U);
+    TickType_t last_wake_time = xTaskGetTickCount();
     uint8_t frame[NEIGHBOR_FRAME_LEN]; // version(1) + content_id(1) + seq(1) + data_len(1) + data(24) + crc16(2)
     uint8_t packet_seq = 0U;
     frame[0] = NEIGHBOR_FRAME_VERSION;
@@ -195,8 +196,7 @@ void report_atc_data_task(void *argument)
             vTaskDelay(pdMS_TO_TICKS(10));
             continue;
         }
-
-        vTaskDelay(period);
+        vTaskDelayUntil(&last_wake_time, period);
         offline_manage_update_event(OFFLINE_PUBLISH_MQTT);
 
         send_hourly_4g_command();
@@ -214,7 +214,5 @@ void report_atc_data_task(void *argument)
         neighbor_report_interface_send(frame, sizeof(frame));
 
         packet_seq++;
-        
-
     }
 }

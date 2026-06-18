@@ -403,7 +403,7 @@ static void ota_consumer_task(void *argument)
 	const uint32_t poll_ms = 100U;
 	for (;;)
 	{
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(10));
 		FEED_SYS_WATCHDOG();
 
 		osStatus_t st = osMessageQueueGet(svc->rx_queue, &msg, NULL, poll_ms);

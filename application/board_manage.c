@@ -100,7 +100,7 @@ void board_create_user_tasks(void) {
     const osThreadAttr_t attr = {
         .name = "neighbor_report",
         .stack_size = 1024 * 4,
-        .priority = (osPriority_t)osPriorityNormal,
+        .priority = (osPriority_t)osPriorityAboveNormal,
     };
     osThreadNew(report_atc_data_task, NULL, &attr);
     
