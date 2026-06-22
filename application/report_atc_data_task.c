@@ -199,7 +199,7 @@ void report_atc_data_task(void *argument)
         vTaskDelayUntil(&last_wake_time, period);
         offline_manage_update_event(OFFLINE_PUBLISH_MQTT);
 
-        send_hourly_4g_command();
+        // send_hourly_4g_command();
 
         frame[2] = packet_seq;
         // pack data
