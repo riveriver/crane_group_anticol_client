@@ -181,7 +181,7 @@ extern ota_service_t g_ota;
 void report_atc_data_task(void *argument)
 {
     (void)argument;
-    const TickType_t period = pdMS_TO_TICKS(500U);
+    const TickType_t period = pdMS_TO_TICKS(1000U);
     TickType_t last_wake_time = xTaskGetTickCount();
     uint8_t frame[NEIGHBOR_FRAME_LEN]; // version(1) + content_id(1) + seq(1) + data_len(1) + data(24) + crc16(2)
     uint8_t packet_seq = 0U;
